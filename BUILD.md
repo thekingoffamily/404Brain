@@ -2,6 +2,15 @@
 
 [English](./BUILD.md) · [Русский](./BUILD.ru.md) · [中文](./BUILD.zh.md) · [Español](./BUILD.es.md) · [Português](./BUILD.pt.md) · [Deutsch](./BUILD.de.md) · [Français](./BUILD.fr.md) · [日本語](./BUILD.ja.md) · [한국어](./BUILD.ko.md) · [Українська](./BUILD.uk.md)
 
+## Lazy start
+
+**Windows:** double-click `RUN_AND_INSTALL.bat`  
+**Mac / Linux:** `chmod +x run_and_install.sh && ./run_and_install.sh`
+
+Then skip to troubleshooting below only if something breaks.
+
+---
+
 Node **20.18.2** (see `.nvmrc`). Path to the repo must **not** contain spaces.
 
 ---

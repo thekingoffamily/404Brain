@@ -15,6 +15,14 @@
 
 Agents on your codebase. Checkpoints and live diffs. Any model or local host. Messages go straight to your providers — your data stays yours.
 
+## Lazy start (recommended)
+
+**Windows:** double-click `RUN_AND_INSTALL.bat`  
+**Mac / Linux:** `chmod +x run_and_install.sh && ./run_and_install.sh`
+
+That script installs deps (if needed), compiles once, and opens 404Brain.  
+Need Node **20.18.2**. On Windows also VS 2022 C++ build tools (see [BUILD.md](./BUILD.md)).
+
 ## Features
 
 - AI agents over real project files
