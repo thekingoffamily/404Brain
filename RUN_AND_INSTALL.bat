@@ -46,6 +46,19 @@ if errorlevel 1 (
   exit /b 1
 )
 
+REM Need ~8+ GB free on C: for node-gyp / MSBuild PDBs
+for /f "tokens=3" %%a in ('dir /-c C:\ 2^>nul ^| findstr /C:"bytes free"') do set "FREEBYTES=%%a"
+if defined FREEBYTES (
+  set /a FREEGBapprox=!FREEBYTES:~0,-9! 2>nul
+  if defined FREEGBapprox if !FREEGBapprox! LSS 6 (
+    echo [!] C: has only ~!FREEGBapprox! GB free. Native build needs ~8+ GB.
+    echo     Free space ^(Docker cache, Android, .gradle, Recycle Bin^), then retry.
+    echo     Biggest usual hog: %%LOCALAPPDATA%%\Docker
+    pause
+    exit /b 1
+  )
+)
+
 REM Fresh install if node_modules was built with wrong Node
 if exist "node_modules\" (
   if exist ".tools\.need_reinstall" (
@@ -61,9 +74,11 @@ if not exist "node_modules\" (
   if errorlevel 1 (
     echo.
     echo [!] npm install failed ^(native C++ build^).
-    echo     Tools look installed, but node-gyp still failed.
-    echo     Try: reboot, then rmdir /s /q node_modules ^& RUN_AND_INSTALL.bat
-    echo     Or re-run INSTALL_BUILD_TOOLS.bat and Modify Community too ^(Spectre^).
+    echo     Often: disk full ^(LNK1201 / No space left on device^).
+    echo     Check free space on C:, then:
+    echo       rmdir /s /q node_modules
+    echo       RUN_AND_INSTALL.bat
+    echo     If tools missing: INSTALL_BUILD_TOOLS.bat
     echo.
     set /p OPENBT=Open INSTALL_BUILD_TOOLS.bat now? [Y/N]: 
     if /I "!OPENBT!"=="Y" call "%~dp0INSTALL_BUILD_TOOLS.bat"
@@ -76,20 +91,27 @@ if not exist "node_modules\" (
 
 echo.
 set NODE_OPTIONS=--max-old-space-size=8192
+
+REM compile imports gitignored react/out/*.js — build those first
+if not exist "src\vs\workbench\contrib\brain\browser\react\out\" (
+  echo [..] npm run buildreact
+  call npm run buildreact
+  if errorlevel 1 (
+    echo [!] buildreact failed. See BUILD.ru.md
+    pause
+    exit /b 1
+  )
+) else (
+  echo [ok] react/out present
+)
+
+echo.
 echo [..] npm run compile
 call npm run compile
 if errorlevel 1 (
   echo [!] compile failed. See BUILD.ru.md
   pause
   exit /b 1
-)
-
-echo.
-if not exist "src\vs\workbench\contrib\brain\browser\react\out\" (
-  echo [..] npm run buildreact
-  call npm run buildreact
-) else (
-  echo [ok] react/out present
 )
 
 echo.
