@@ -18,6 +18,8 @@ Agents on your codebase. Checkpoints and live diffs. Any model or local host. Me
 ## Lazy start (recommended)
 
 **Windows:** double-click `RUN_AND_INSTALL.bat`  
+(It auto-downloads portable **Node 20.18.2** into `.tools/` if your system Node is 22/23 — you can keep the new Node.)
+
 **Mac / Linux:** `chmod +x run_and_install.sh && ./run_and_install.sh`
 
 That script installs deps (if needed), compiles once, and opens 404Brain.  

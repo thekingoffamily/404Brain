@@ -18,6 +18,8 @@
 ## Ленивый старт (рекомендуется)
 
 **Windows:** двойной клик по `RUN_AND_INSTALL.bat`  
+(Сам скачает portable **Node 20.18.2** в `.tools/`, если у тебя системный Node 22/23 — новый Node можно не сносить.)
+
 **Mac / Linux:** `chmod +x run_and_install.sh && ./run_and_install.sh`
 
 Скрипт сам поставит зависимости (если надо), соберёт и откроет 404Brain.  
