@@ -50,15 +50,21 @@ if not exist "node_modules\" (
   call npm install
   if errorlevel 1 (
     echo.
-    echo [!] npm install failed ^(native build^).
-    echo     Open Visual Studio Installer - Modify VS 2022:
-    echo       Workloads: Desktop development with C++
-    echo                  Node.js build tools
-    echo       Individual: MSVC v143 Spectre-mitigated libs
-    echo                   C++ ATL with Spectre Mitigations
-    echo                   C++ MFC with Spectre Mitigations
-    echo     Then: rmdir /s /q node_modules ^& RUN_AND_INSTALL.bat
-    echo     See BUILD.ru.md
+    echo [!] npm install failed ^(native C++ build^).
+    echo     Node is OK. Missing Visual C++ / Spectre libs.
+    echo.
+    echo     FIX: run INSTALL_BUILD_TOOLS.bat  ^(Admin if asked^)
+    echo     Wait until installer finishes, reboot if Windows asks,
+    echo     then:
+    echo       rmdir /s /q node_modules
+    echo       RUN_AND_INSTALL.bat
+    echo.
+    echo     Or manual: Visual Studio Installer - Modify -
+    echo       Desktop development with C++ + Node.js build tools
+    echo       + Spectre-mitigated libs / ATL / MFC Spectre
+    echo.
+    set /p OPENBT=Open INSTALL_BUILD_TOOLS.bat now? [Y/N]: 
+    if /I "!OPENBT!"=="Y" call "%~dp0INSTALL_BUILD_TOOLS.bat"
     pause
     exit /b 1
   )

@@ -5,6 +5,10 @@
 ## Ленивый старт
 
 **Windows:** двойной клик по `RUN_AND_INSTALL.bat`  
+(Сам скачает portable **Node 20.18.2** в `.tools/`, если у тебя системный Node 22/23 — новый Node можно не сносить.)
+
+Если `npm install` падает на `@vscode/deviceid` / MSBuild — запусти **`INSTALL_BUILD_TOOLS.bat`** (поставит C++ Build Tools + Spectre), потом снова `RUN_AND_INSTALL.bat`.
+
 **Mac / Linux:** `chmod +x run_and_install.sh && ./run_and_install.sh`
 
 Дальше этот гайд — только если что-то сломалось.
