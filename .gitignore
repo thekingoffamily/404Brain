@@ -49,6 +49,7 @@ articles/
 .env
 .env.*
 !.env.example
+.tools/
 
 __pycache__/
 *.pyc

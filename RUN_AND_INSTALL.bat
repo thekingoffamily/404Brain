@@ -1,7 +1,13 @@
 @echo off
-setlocal EnableExtensions
+setlocal EnableExtensions EnableDelayedExpansion
 cd /d "%~dp0"
 title 404Brain - RUN AND INSTALL
+
+set "NEED_NODE=20.18.2"
+set "TOOLS_DIR=%CD%\.tools"
+set "NODE_HOME=%TOOLS_DIR%\node-v%NEED_NODE%-win-x64"
+set "NODE_ZIP=%TOOLS_DIR%\node-v%NEED_NODE%-win-x64.zip"
+set "NODE_URL=https://nodejs.org/dist/v%NEED_NODE%/node-v%NEED_NODE%-win-x64.zip"
 
 echo.
 echo  ========================================
@@ -11,111 +17,126 @@ echo.
 echo  Folder: %CD%
 echo.
 
-REM Soft warn only if path really contains spaces
+REM Soft warn on spaces
 set "_P=%CD%"
 set "_NOSPACE=%_P: =%"
 if /I not "%_NOSPACE%"=="%_P%" (
   echo [!] WARNING: path has spaces. Build may fail.
-  echo     Better move to e.g. C:\dev\404Brain
-  echo     Continuing anyway in 3 sec...
+  echo     Better: C:\dev\404Brain
   timeout /t 3 >nul
 )
 
-REM --- Node MUST be 20.x (project .nvmrc = 20.18.2). Node 23 WILL break native modules. ---
-where node >nul 2>&1
-if errorlevel 1 (
-  echo [!] Node.js not found.
-  goto NEED_NODE20
-)
+REM --- Ensure Node 20 for THIS script (keep your system Node 23 untouched) ---
+call :ENSURE_NODE20
+if errorlevel 1 exit /b 1
 
-for /f "tokens=*" %%v in ('node -v') do set NODEVER=%%v
-echo [..] Node %NODEVER%
-
-echo %NODEVER% | findstr /R /C:"^v20\." >nul
-if errorlevel 1 (
-  echo.
-  echo [!] WRONG Node version: %NODEVER%
-  echo     404Brain needs Node v20.18.2  ^(see .nvmrc^)
-  echo     Your Node 23/22/21 breaks @vscode/deviceid and other native builds.
-  echo.
-  goto NEED_NODE20
-)
-
-echo [ok] Node %NODEVER% is 20.x
+echo [ok] Using Node:
+call node -v
+call npm -v
+echo     PATH tip: system Node can stay 23 - this bat uses portable Node 20.
 echo.
 
-REM --- npm install ---
+REM Fresh install if node_modules was built with wrong Node
+if exist "node_modules\" (
+  if exist ".tools\.need_reinstall" (
+    echo [..] Removing node_modules built with wrong Node...
+    rmdir /s /q node_modules 2>nul
+    del /f /q ".tools\.need_reinstall" 2>nul
+  )
+)
+
 if not exist "node_modules\" (
   echo [..] npm install  (first time = long)
   call npm install
   if errorlevel 1 (
     echo.
-    echo [!] npm install failed.
-    echo.
-    echo     1^) Node must be 20.18.2 ^(you have that if you got here^)
-    echo     2^) Visual Studio 2022 Community - open Installer and enable:
-    echo        Workloads: Desktop development with C++
-    echo                   Node.js build tools
-    echo        Individual: MSVC v143 Spectre-mitigated libs ^(x64/x86^)
-    echo                    C++ ATL with Spectre Mitigations
-    echo                    C++ MFC with Spectre Mitigations
-    echo     3^) Then delete node_modules and try again:
-    echo        rmdir /s /q node_modules
-    echo        RUN_AND_INSTALL.bat
-    echo.
-    echo     Details: BUILD.ru.md
+    echo [!] npm install failed ^(native build^).
+    echo     Open Visual Studio Installer - Modify VS 2022:
+    echo       Workloads: Desktop development with C++
+    echo                  Node.js build tools
+    echo       Individual: MSVC v143 Spectre-mitigated libs
+    echo                   C++ ATL with Spectre Mitigations
+    echo                   C++ MFC with Spectre Mitigations
+    echo     Then: rmdir /s /q node_modules ^& RUN_AND_INSTALL.bat
+    echo     See BUILD.ru.md
     pause
     exit /b 1
   )
 ) else (
-  echo [ok] node_modules already there - skip npm install
-  echo     ^(delete node_modules to force reinstall^)
+  echo [ok] node_modules present - skip npm install
 )
-echo.
 
+echo.
 set NODE_OPTIONS=--max-old-space-size=8192
-echo [..] npm run compile  (first time = several minutes)
+echo [..] npm run compile
 call npm run compile
 if errorlevel 1 (
   echo [!] compile failed. See BUILD.ru.md
   pause
   exit /b 1
 )
-echo.
 
+echo.
 if not exist "src\vs\workbench\contrib\brain\browser\react\out\" (
   echo [..] npm run buildreact
   call npm run buildreact
-  if errorlevel 1 echo [!] buildreact failed - continuing anyway
 ) else (
-  echo [ok] react/out present - skip buildreact
+  echo [ok] react/out present
 )
-echo.
 
+echo.
 echo [..] launching 404Brain...
 call ".\scripts\code.bat" --user-data-dir ".\.tmp\user-data" --extensions-dir ".\.tmp\extensions" %*
 set EXITCODE=%ERRORLEVEL%
-echo.
 echo Done. Exit code: %EXITCODE%
 if not "%EXITCODE%"=="0" pause
 endlocal & exit /b %EXITCODE%
 
-:NEED_NODE20
-echo.
-echo     FIX NOW:
-echo     1. Uninstall Node 23 from Settings - Apps  OR keep it but switch default
-echo     2. Install Node 20.18.2 LTS:
-echo        https://nodejs.org/dist/v20.18.2/node-v20.18.2-x64.msi
-echo     3. Close ALL terminals / Cursor terminals
-echo     4. Open NEW cmd and check:  node -v
-echo        Must print: v20.18.2
-echo     5. In repo folder:
-echo        rmdir /s /q node_modules
-echo        RUN_AND_INSTALL.bat
-echo.
-echo     Or via winget ^(if available^):
-echo        winget install OpenJS.NodeJS.LTS --version 20.18.2
-echo.
-start "" "https://nodejs.org/dist/v20.18.2/node-v20.18.2-x64.msi"
-pause
-exit /b 1
+
+:ENSURE_NODE20
+REM If system node is already 20.x - use it
+where node >nul 2>&1
+if not errorlevel 1 (
+  for /f "tokens=*" %%v in ('node -v 2^>nul') do set "SYSVER=%%v"
+  echo !SYSVER! | findstr /R /C:"^v20\." >nul
+  if not errorlevel 1 (
+    echo [ok] System Node !SYSVER! is fine
+    exit /b 0
+  )
+  echo [..] System Node is !SYSVER! - OK to keep it.
+  echo     Build needs Node %NEED_NODE% ^(VS Code / Electron toolchain^).
+  echo     Downloading portable Node %NEED_NODE% into .tools\ ...
+  echo.>"%TOOLS_DIR%\.need_reinstall" 2>nul
+)
+
+if not exist "%NODE_HOME%\node.exe" (
+  if not exist "%TOOLS_DIR%" mkdir "%TOOLS_DIR%"
+  echo [..] Download: %NODE_URL%
+  powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+    "try { Invoke-WebRequest -Uri '%NODE_URL%' -OutFile '%NODE_ZIP%' -UseBasicParsing } catch { exit 1 }"
+  if errorlevel 1 (
+    echo [!] Download failed. Check internet or install Node %NEED_NODE% manually.
+    echo     %NODE_URL%
+    pause
+    exit /b 1
+  )
+  echo [..] Extracting...
+  powershell -NoProfile -ExecutionPolicy Bypass -Command ^
+    "Expand-Archive -Path '%NODE_ZIP%' -DestinationPath '%TOOLS_DIR%' -Force"
+  if errorlevel 1 (
+    echo [!] Extract failed.
+    pause
+    exit /b 1
+  )
+  del /f /q "%NODE_ZIP%" 2>nul
+)
+
+if not exist "%NODE_HOME%\node.exe" (
+  echo [!] Portable Node not found at %NODE_HOME%
+  pause
+  exit /b 1
+)
+
+set "PATH=%NODE_HOME%;%PATH%"
+echo [ok] Portable Node ready: %NODE_HOME%
+exit /b 0
