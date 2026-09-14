@@ -1,26 +1,26 @@
-# Build 404Brain (local)
+# Builder 404Brain (local)
 
 [English](./BUILD.md) · [Русский](./BUILD.ru.md) · [中文](./BUILD.zh.md) · [Español](./BUILD.es.md) · [Português](./BUILD.pt.md) · [Deutsch](./BUILD.de.md) · [Français](./BUILD.fr.md) · [日本語](./BUILD.ja.md) · [한국어](./BUILD.ko.md) · [Українська](./BUILD.uk.md)
 
-Node **20.18.2** (see `.nvmrc`). Path to the repo must **not** contain spaces.
+Node **20.18.2** (voir `.nvmrc`). Le chemin du dépôt ne doit **pas** contenir d’espaces.
 
 ---
 
-## 0. Prerequisites (once)
+## 0. Prérequis (une fois)
 
 ### Windows
 
-1. Install [Visual Studio 2022 Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community) (or Build Tools).
-2. Workloads: **Desktop development with C++**, **Node.js build tools**.
-3. Individual components:
+1. Installez [Visual Studio 2022 Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community) (ou Build Tools).
+2. Workloads : **Desktop development with C++**, **Node.js build tools**.
+3. Individual components :
    - `MSVC v143 - VS 2022 C++ x64/x86 Spectre-mitigated libs (Latest)`
    - `C++ ATL for latest build tools with Spectre Mitigations`
    - `C++ MFC for latest build tools with Spectre Mitigations`
-4. Install.
+4. Installer.
 
 ### Mac
 
-Python + Xcode (usually already there).
+Python + Xcode (souvent déjà là).
 
 ### Linux
 
@@ -28,7 +28,7 @@ Python + Xcode (usually already there).
 npm install -g node-gyp
 ```
 
-Then (Debian/Ubuntu):
+Puis (Debian/Ubuntu) :
 
 ```bash
 sudo apt-get install build-essential g++ libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev python-is-python3
@@ -36,21 +36,21 @@ sudo apt-get install build-essential g++ libx11-dev libxkbfile-dev libsecret-1-d
 
 ---
 
-## 1. Clone + install
+## 1. Cloner + install
 
 ```bash
 git clone https://github.com/thekingoffamily/404Brain
 cd 404Brain
 ```
 
-Node version:
+Version de Node :
 
 ```bash
 nvm install
 nvm use
 ```
 
-(or install Node `20.18.2` another way)
+(ou installez Node `20.18.2` autrement)
 
 ```bash
 npm install
@@ -60,52 +60,52 @@ npm install
 
 ## 2. Build (watch)
 
-**Option A — from terminal**
+**Option A — terminal**
 
 ```bash
 npm run watch
 ```
 
-Wait until you see both lines roughly like:
+Attendez des lignes du genre :
 
 ```text
 Finished compilation extensions with 0 errors
 Finished compilation with 0 errors
 ```
 
-**Option B — from VS Code / Cursor**
+**Option B — depuis VS Code / Cursor**
 
-Press `Ctrl+Shift+B` (Mac: `Cmd+Shift+B`) and wait until the build tasks finish (~5 min first time).
+Appuyez sur `Ctrl+Shift+B` (Mac : `Cmd+Shift+B`) et attendez la fin (~5 min la première fois).
 
 ---
 
-## 3. Run Developer Mode
+## 3. Mode développeur
 
-**Windows:**
+**Windows :**
 
 ```bat
 .\scripts\code.bat --user-data-dir .\.tmp\user-data --extensions-dir .\.tmp\extensions
 ```
 
-**Mac / Linux:**
+**Mac / Linux :**
 
 ```bash
 ./scripts/code.sh --user-data-dir ./.tmp/user-data --extensions-dir ./.tmp/extensions
 ```
 
-A 404Brain window opens. After code changes: `Ctrl+R` / `Cmd+R` (or Command Palette → **Reload Window**).
+Une fenêtre 404Brain s’ouvre. Après des changements : `Ctrl+R` / `Cmd+R` (ou Command Palette → **Reload Window**).
 
-To reset local IDE state: delete the `.tmp` folder.
+Pour réinitialiser l’état local : supprimez le dossier `.tmp`.
 
 ---
 
-## 4. React UI (if you change React under `contrib/brain`)
+## 4. UI React (si vous modifiez React sous `contrib/brain`)
 
 ```bash
 npm run buildreact
 ```
 
-If it OOMs:
+En cas d’OOM :
 
 ```powershell
 # Windows PowerShell
@@ -119,18 +119,18 @@ NODE_OPTIONS="--max-old-space-size=8192" npm run buildreact
 
 ---
 
-## Common fixes
+## Correctifs courants
 
-| Problem | Fix |
+| Problème | Correctif |
 |--------|-----|
-| Wrong Node | Use `20.18.2` from `.nvmrc` |
-| Path with spaces | Move the repo |
-| React / OOM | `buildreact` with `NODE_OPTIONS=8192` as above |
-| Linux sandbox error | `sudo chown root:root .build/electron/chrome-sandbox && sudo chmod 4755 .build/electron/chrome-sandbox` |
+| Mauvais Node | Utilisez `20.18.2` de `.nvmrc` |
+| Espaces dans le chemin | Déplacez le dépôt |
+| React / OOM | `buildreact` avec `NODE_OPTIONS=8192` |
+| Erreur sandbox Linux | `sudo chown root:root .build/electron/chrome-sandbox && sudo chmod 4755 .build/electron/chrome-sandbox` |
 
 ---
 
 ## Contact
 
-- Email: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
+- E-mail: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
 - Telegram: [@palapalaru](https://t.me/palapalaru)

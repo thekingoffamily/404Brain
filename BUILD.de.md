@@ -1,26 +1,26 @@
-# Build 404Brain (local)
+# 404Brain bauen (lokal)
 
 [English](./BUILD.md) · [Русский](./BUILD.ru.md) · [中文](./BUILD.zh.md) · [Español](./BUILD.es.md) · [Português](./BUILD.pt.md) · [Deutsch](./BUILD.de.md) · [Français](./BUILD.fr.md) · [日本語](./BUILD.ja.md) · [한국어](./BUILD.ko.md) · [Українська](./BUILD.uk.md)
 
-Node **20.18.2** (see `.nvmrc`). Path to the repo must **not** contain spaces.
+Node **20.18.2** (siehe `.nvmrc`). Der Repo-Pfad darf **keine** Leerzeichen enthalten.
 
 ---
 
-## 0. Prerequisites (once)
+## 0. Voraussetzungen (einmalig)
 
 ### Windows
 
-1. Install [Visual Studio 2022 Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community) (or Build Tools).
+1. Installiere [Visual Studio 2022 Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community) (oder Build Tools).
 2. Workloads: **Desktop development with C++**, **Node.js build tools**.
 3. Individual components:
    - `MSVC v143 - VS 2022 C++ x64/x86 Spectre-mitigated libs (Latest)`
    - `C++ ATL for latest build tools with Spectre Mitigations`
    - `C++ MFC for latest build tools with Spectre Mitigations`
-4. Install.
+4. Installieren.
 
 ### Mac
 
-Python + Xcode (usually already there).
+Python + Xcode (meist schon da).
 
 ### Linux
 
@@ -28,7 +28,7 @@ Python + Xcode (usually already there).
 npm install -g node-gyp
 ```
 
-Then (Debian/Ubuntu):
+Dann (Debian/Ubuntu):
 
 ```bash
 sudo apt-get install build-essential g++ libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev python-is-python3
@@ -36,21 +36,21 @@ sudo apt-get install build-essential g++ libx11-dev libxkbfile-dev libsecret-1-d
 
 ---
 
-## 1. Clone + install
+## 1. Klonen + install
 
 ```bash
 git clone https://github.com/thekingoffamily/404Brain
 cd 404Brain
 ```
 
-Node version:
+Node-Version:
 
 ```bash
 nvm install
 nvm use
 ```
 
-(or install Node `20.18.2` another way)
+(oder Node `20.18.2` anders installieren)
 
 ```bash
 npm install
@@ -60,26 +60,26 @@ npm install
 
 ## 2. Build (watch)
 
-**Option A — from terminal**
+**Option A — Terminal**
 
 ```bash
 npm run watch
 ```
 
-Wait until you see both lines roughly like:
+Warte, bis du ungefähr siehst:
 
 ```text
 Finished compilation extensions with 0 errors
 Finished compilation with 0 errors
 ```
 
-**Option B — from VS Code / Cursor**
+**Option B — in VS Code / Cursor**
 
-Press `Ctrl+Shift+B` (Mac: `Cmd+Shift+B`) and wait until the build tasks finish (~5 min first time).
+`Ctrl+Shift+B` (Mac: `Cmd+Shift+B`) drücken und warten (~5 Min beim ersten Mal).
 
 ---
 
-## 3. Run Developer Mode
+## 3. Developer Mode
 
 **Windows:**
 
@@ -93,19 +93,19 @@ Press `Ctrl+Shift+B` (Mac: `Cmd+Shift+B`) and wait until the build tasks finish 
 ./scripts/code.sh --user-data-dir ./.tmp/user-data --extensions-dir ./.tmp/extensions
 ```
 
-A 404Brain window opens. After code changes: `Ctrl+R` / `Cmd+R` (or Command Palette → **Reload Window**).
+Ein 404Brain-Fenster öffnet sich. Nach Code-Änderungen: `Ctrl+R` / `Cmd+R` (oder Command Palette → **Reload Window**).
 
-To reset local IDE state: delete the `.tmp` folder.
+Lokalen IDE-Zustand zurücksetzen: Ordner `.tmp` löschen.
 
 ---
 
-## 4. React UI (if you change React under `contrib/brain`)
+## 4. React-UI (bei Änderungen unter `contrib/brain`)
 
 ```bash
 npm run buildreact
 ```
 
-If it OOMs:
+Bei OOM:
 
 ```powershell
 # Windows PowerShell
@@ -119,18 +119,18 @@ NODE_OPTIONS="--max-old-space-size=8192" npm run buildreact
 
 ---
 
-## Common fixes
+## Häufige Fixes
 
 | Problem | Fix |
 |--------|-----|
-| Wrong Node | Use `20.18.2` from `.nvmrc` |
-| Path with spaces | Move the repo |
-| React / OOM | `buildreact` with `NODE_OPTIONS=8192` as above |
-| Linux sandbox error | `sudo chown root:root .build/electron/chrome-sandbox && sudo chmod 4755 .build/electron/chrome-sandbox` |
+| Falsche Node-Version | `20.18.2` aus `.nvmrc` |
+| Leerzeichen im Pfad | Repo verschieben |
+| React / OOM | `buildreact` mit `NODE_OPTIONS=8192` |
+| Linux-Sandbox-Fehler | `sudo chown root:root .build/electron/chrome-sandbox && sudo chmod 4755 .build/electron/chrome-sandbox` |
 
 ---
 
-## Contact
+## Kontakt
 
-- Email: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
+- E-Mail: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
 - Telegram: [@palapalaru](https://t.me/palapalaru)

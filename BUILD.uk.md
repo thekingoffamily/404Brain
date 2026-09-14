@@ -1,16 +1,16 @@
-# Сборка 404Brain (локально)
+# Збірка 404Brain (локально)
 
 [English](./BUILD.md) · [Русский](./BUILD.ru.md) · [中文](./BUILD.zh.md) · [Español](./BUILD.es.md) · [Português](./BUILD.pt.md) · [Deutsch](./BUILD.de.md) · [Français](./BUILD.fr.md) · [日本語](./BUILD.ja.md) · [한국어](./BUILD.ko.md) · [Українська](./BUILD.uk.md)
 
-Node **20.18.2** (см. `.nvmrc`). В пути к репо **не должно быть пробелов**.
+Node **20.18.2** (див. `.nvmrc`). У шляху до репо **не має бути пробілів**.
 
 ---
 
-## 0. Один раз — зависимости
+## 0. Один раз — залежності
 
 ### Windows
 
-1. Поставь [Visual Studio 2022 Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community) (или Build Tools).
+1. Встановіть [Visual Studio 2022 Community](https://visualstudio.microsoft.com/thank-you-downloading-visual-studio/?sku=Community) (або Build Tools).
 2. Workloads: **Desktop development with C++**, **Node.js build tools**.
 3. Individual components:
    - `MSVC v143 - VS 2022 C++ x64/x86 Spectre-mitigated libs (Latest)`
@@ -20,7 +20,7 @@ Node **20.18.2** (см. `.nvmrc`). В пути к репо **не должно �
 
 ### Mac
 
-Python + Xcode (обычно уже есть).
+Python + Xcode (зазвичай уже є).
 
 ### Linux
 
@@ -28,7 +28,7 @@ Python + Xcode (обычно уже есть).
 npm install -g node-gyp
 ```
 
-Debian/Ubuntu:
+Далі (Debian/Ubuntu):
 
 ```bash
 sudo apt-get install build-essential g++ libx11-dev libxkbfile-dev libsecret-1-dev libkrb5-dev python-is-python3
@@ -43,14 +43,14 @@ git clone https://github.com/thekingoffamily/404Brain
 cd 404Brain
 ```
 
-Версия Node:
+Версія Node:
 
 ```bash
 nvm install
 nvm use
 ```
 
-(или поставь Node `20.18.2` иначе)
+(або поставте Node `20.18.2` інакше)
 
 ```bash
 npm install
@@ -58,24 +58,24 @@ npm install
 
 ---
 
-## 2. Сборка (watch)
+## 2. Збірка (watch)
 
-**Вариант A — терминал**
+**Варіант A — термінал**
 
 ```bash
 npm run watch
 ```
 
-Жди примерно такие строки:
+Чекайте приблизно такі рядки:
 
 ```text
 Finished compilation extensions with 0 errors
 Finished compilation with 0 errors
 ```
 
-**Вариант B — из VS Code / Cursor**
+**Варіант B — з VS Code / Cursor**
 
-`Ctrl+Shift+B` (Mac: `Cmd+Shift+B`), жди окончания задач (~5 мин в первый раз).
+`Ctrl+Shift+B` (Mac: `Cmd+Shift+B`), чекайте завершення (~5 хв уперше).
 
 ---
 
@@ -93,19 +93,19 @@ Finished compilation with 0 errors
 ./scripts/code.sh --user-data-dir ./.tmp/user-data --extensions-dir ./.tmp/extensions
 ```
 
-Откроется окно 404Brain. После правок кода: `Ctrl+R` / `Cmd+R` (или Command Palette → **Reload Window**).
+Відкриється вікно 404Brain. Після змін коду: `Ctrl+R` / `Cmd+R` (або Command Palette → **Reload Window**).
 
-Сброс локального состояния IDE: удали папку `.tmp`.
+Скинути локальний стан IDE: видаліть папку `.tmp`.
 
 ---
 
-## 4. React UI (если трогал React в `contrib/brain`)
+## 4. React UI (якщо змінювали React у `contrib/brain`)
 
 ```bash
 npm run buildreact
 ```
 
-Если не хватает памяти:
+Якщо не вистачає пам’яті (OOM):
 
 ```powershell
 # Windows PowerShell
@@ -119,18 +119,18 @@ NODE_OPTIONS="--max-old-space-size=8192" npm run buildreact
 
 ---
 
-## Частые фиксы
+## Часті фікси
 
-| Проблема | Что сделать |
+| Проблема | Що зробити |
 |--------|-------------|
-| Не тот Node | `20.18.2` из `.nvmrc` |
-| Пробелы в пути | Перенеси репо |
-| React / OOM | `buildreact` с `NODE_OPTIONS=8192` |
+| Не той Node | `20.18.2` з `.nvmrc` |
+| Пробіли в шляху | Перенесіть репо |
+| React / OOM | `buildreact` з `NODE_OPTIONS=8192` |
 | Linux sandbox | `sudo chown root:root .build/electron/chrome-sandbox && sudo chmod 4755 .build/electron/chrome-sandbox` |
 
 ---
 
-## Связь
+## Зв’язок
 
-- Почта: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
+- Пошта: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
 - Telegram: [@palapalaru](https://t.me/palapalaru)

@@ -1,6 +1,6 @@
 # 404Brain
 
-[English](./README.md) · [Русский](./README.ru.md)
+[English](./README.md) · [Русский](./README.ru.md) · [中文](./README.zh.md) · [Español](./README.es.md) · [Português](./README.pt.md) · [Deutsch](./README.de.md) · [Français](./README.fr.md) · [日本語](./README.ja.md) · [한국어](./README.ko.md) · [Українська](./README.uk.md)
 
 <div align="center">
 	<img
