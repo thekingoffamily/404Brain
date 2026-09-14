@@ -5,18 +5,20 @@ title 404Brain - RUN AND INSTALL
 
 echo.
 echo  ========================================
-echo   404Brain — lazy install + run
+echo   404Brain - lazy install + run
 echo  ========================================
 echo.
+echo  Folder: %CD%
+echo.
 
-REM --- path with spaces is poison for this codebase ---
-echo %CD% | findstr /C:" " >nul
-if not errorlevel 1 (
-  echo [!] Path has SPACES. Move the repo to a path without spaces.
-  echo     Example: C:\dev\404Brain
-  echo.
-  pause
-  exit /b 1
+REM Soft warn only if path really contains spaces (no false positives)
+set "_P=%CD%"
+set "_NOSPACE=%_P: =%"
+if /I not "%_NOSPACE%"=="%_P%" (
+  echo [!] WARNING: path has spaces. Build may fail.
+  echo     Better move to e.g. C:\dev\404Brain
+  echo     Continuing anyway in 3 sec...
+  timeout /t 3 >nul
 )
 
 REM --- Node ---
@@ -30,7 +32,7 @@ if errorlevel 1 (
 )
 
 for /f "tokens=*" %%v in ('node -v') do set NODEVER=%%v
-echo [ok] Node %NODEVER%  (want v20.18.2 — see .nvmrc)
+echo [ok] Node %NODEVER%  (want v20.18.2 - see .nvmrc)
 echo.
 
 REM --- npm install ---
@@ -44,7 +46,7 @@ if not exist "node_modules\" (
     exit /b 1
   )
 ) else (
-  echo [ok] node_modules already there — skip npm install
+  echo [ok] node_modules already there - skip npm install
   echo     (delete node_modules folder to force reinstall)
 )
 echo.
@@ -65,10 +67,10 @@ if not exist "src\vs\workbench\contrib\brain\browser\react\out\" (
   echo [..] npm run buildreact
   call npm run buildreact
   if errorlevel 1 (
-    echo [!] buildreact failed — continuing anyway
+    echo [!] buildreact failed - continuing anyway
   )
 ) else (
-  echo [ok] react/out present — skip buildreact
+  echo [ok] react/out present - skip buildreact
 )
 echo.
 
