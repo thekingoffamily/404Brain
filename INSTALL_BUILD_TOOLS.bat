@@ -60,6 +60,18 @@ if defined INSTALL_PATH (
   exit /b 1
 )
 
+REM Also patch Community if present ^(node-gyp sometimes prefers it^)
+set "COMMUNITY_PATH="
+if exist "%VSWHERE%" (
+  for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -products Microsoft.VisualStudio.Product.Community -version "[17.0,18.0)" -property installationPath`) do set "COMMUNITY_PATH=%%i"
+)
+if defined COMMUNITY_PATH (
+  if /I not "%COMMUNITY_PATH%"=="%INSTALL_PATH%" (
+    echo [..] Also adding Spectre to Community: %COMMUNITY_PATH%
+    "%SETUP%" modify --installPath "%COMMUNITY_PATH%" --passive --wait %ADD%
+  )
+)
+
 :DONE
 echo.
 echo [ok] Installer finished. REBOOT recommended if Windows asks.
