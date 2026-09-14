@@ -106,6 +106,19 @@ const newOpenAICompatibleSDK = async ({ settingsOfProvider, providerName, includ
 			...commonPayloadOpts,
 		})
 	}
+	else if (providerName === 'aiTunnel') {
+		// https://aitunnel.ru/docs — OpenAI-compatible; base URL must include /v1
+		const thisConfig = settingsOfProvider[providerName]
+		return new OpenAI({
+			baseURL: 'https://api.aitunnel.ru/v1',
+			apiKey: thisConfig.apiKey,
+			defaultHeaders: {
+				'HTTP-Referer': 'https://github.com/thekingoffamily/404Brain',
+				'X-Title': '404Brain',
+			},
+			...commonPayloadOpts,
+		})
+	}
 	else if (providerName === 'googleVertex') {
 		// https://cloud.google.com/vertex-ai/generative-ai/docs/multimodal/call-vertex-using-openai-library
 		const thisConfig = settingsOfProvider[providerName]
@@ -891,6 +904,11 @@ export const sendLLMMessageToProviderImplementation = {
 		list: null,
 	},
 	openRouter: {
+		sendChat: (params) => _sendOpenAICompatibleChat(params),
+		sendFIM: (params) => _sendOpenAICompatibleFIM(params),
+		list: null,
+	},
+	aiTunnel: {
 		sendChat: (params) => _sendOpenAICompatibleChat(params),
 		sendFIM: (params) => _sendOpenAICompatibleFIM(params),
 		list: null,

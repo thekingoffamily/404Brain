@@ -23,6 +23,8 @@ Agents on your codebase. Checkpoints and live diffs. Any model or local host. Me
 That script installs deps (if needed), compiles once, and opens 404Brain.  
 Need Node **20.18.2**. On Windows also VS 2022 C++ build tools (see [BUILD.md](./BUILD.md)).
 
+**Models from Russia:** built-in **AITUNNEL** provider (OpenAI-compatible, RUB, no VPN). Sign up: [aitunnel.ru/?r=52512](https://aitunnel.ru/?r=52512) · Docs: [aitunnel.ru/docs](https://aitunnel.ru/docs).
+
 ## Features
 
 - AI agents over real project files

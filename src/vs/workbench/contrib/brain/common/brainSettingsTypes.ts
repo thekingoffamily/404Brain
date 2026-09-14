@@ -70,6 +70,9 @@ export const displayInfoOfProviderName = (providerName: ProviderName): DisplayIn
 	else if (providerName === 'openRouter') {
 		return { title: 'OpenRouter', }
 	}
+	else if (providerName === 'aiTunnel') {
+		return { title: 'AITUNNEL', }
+	}
 	else if (providerName === 'ollama') {
 		return { title: 'Ollama', }
 	}
@@ -116,6 +119,7 @@ export const subTextMdOfProviderName = (providerName: ProviderName): string => {
 	if (providerName === 'openAI') return 'Get your [API Key here](https://platform.openai.com/api-keys).'
 	if (providerName === 'deepseek') return 'Get your [API Key here](https://platform.deepseek.com/api_keys).'
 	if (providerName === 'openRouter') return 'Get your [API Key here](https://openrouter.ai/settings/keys). Read about [rate limits here](https://openrouter.ai/docs/api-reference/limits).'
+	if (providerName === 'aiTunnel') return 'AITUNNEL — 200+ models, RUB, no VPN. [Sign up / API key](https://aitunnel.ru/?r=52512). Docs: [aitunnel.ru/docs](https://aitunnel.ru/docs). Base URL is built-in (`https://api.aitunnel.ru/v1`).'
 	if (providerName === 'gemini') return 'Get your [API Key here](https://aistudio.google.com/apikey). Read about [rate limits here](https://ai.google.dev/gemini-api/docs/rate-limits#current-rate-limits).'
 	if (providerName === 'groq') return 'Get your [API Key here](https://console.groq.com/keys).'
 	if (providerName === 'xAI') return 'Get your [API Key here](https://console.x.ai).'
@@ -148,6 +152,7 @@ export const displayInfoOfSettingName = (providerName: ProviderName, settingName
 				providerName === 'openAI' ? 'sk-proj-key...' :
 					providerName === 'deepseek' ? 'sk-key...' :
 						providerName === 'openRouter' ? 'sk-or-key...' : // sk-or-v1-key
+							providerName === 'aiTunnel' ? 'sk-aitunnel-...' :
 							providerName === 'gemini' ? 'AIzaSy...' :
 								providerName === 'groq' ? 'gsk_key...' :
 									providerName === 'openAICompatible' ? 'sk-key...' :
@@ -314,6 +319,12 @@ export const defaultSettingsOfProvider: SettingsOfProvider = {
 		...defaultCustomSettings,
 		...defaultProviderSettings.openRouter,
 		...modelInfoOfDefaultModelNames(defaultModelsOfProvider.openRouter),
+		_didFillInProviderSettings: undefined,
+	},
+	aiTunnel: { // AITUNNEL aggregator — https://aitunnel.ru/docs
+		...defaultCustomSettings,
+		...defaultProviderSettings.aiTunnel,
+		...modelInfoOfDefaultModelNames(defaultModelsOfProvider.aiTunnel),
 		_didFillInProviderSettings: undefined,
 	},
 	openAICompatible: { // aggregator (serves models from multiple providers)

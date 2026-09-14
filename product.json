@@ -1,8 +1,8 @@
 {
 	"nameShort": "404Brain",
 	"nameLong": "404Brain",
-	"brainVersion": "1.4.9",
-	"brainRelease": "0044",
+	"brainVersion": "1.5.0",
+	"brainRelease": "0045",
 	"applicationName": "404brain",
 	"dataFolderName": ".404brain-editor",
 	"win32MutexName": "404braineditor",
@@ -40,6 +40,8 @@
 	"linkProtectionTrustedDomains": [
 		"https://github.com/thekingoffamily/404Brain",
 		"https://t.me/palapalaru",
-		"https://ollama.com"
+		"https://ollama.com",
+		"https://aitunnel.ru",
+		"https://api.aitunnel.ru"
 	]
 }

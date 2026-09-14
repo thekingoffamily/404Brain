@@ -28,6 +28,9 @@ export const defaultProviderSettings = {
 	openRouter: {
 		apiKey: '',
 	},
+	aiTunnel: {
+		apiKey: '',
+	},
 	openAICompatible: {
 		endpoint: '',
 		apiKey: '',
@@ -133,6 +136,15 @@ export const defaultModelsOfProvider = {
 		// 'google/gemini-2.0-flash-lite-preview-02-05:free',
 		// 'google/gemini-2.0-pro-exp-02-05:free',
 		// 'google/gemini-2.0-flash-exp:free',
+	],
+	aiTunnel: [ // https://aitunnel.ru/docs — OpenAI-compatible aggregator (RU, no VPN)
+		'auto',
+		'deepseek-v4-pro',
+		'deepseek-v4-flash',
+		'deepseek-v4.1-flash',
+		'claude-sonnet-5',
+		'gpt-5.6-terra',
+		'glm-5.3-flash',
 	],
 	groq: [ // https://console.groq.com/docs/models
 		'qwen-qwq-32b',
@@ -1463,6 +1475,7 @@ const modelSettingsOfProvider: { [providerName in ProviderName]: BrainStaticProv
 
 	// open source models + providers (mixture of everything)
 	openRouter: openRouterSettings,
+	aiTunnel: openRouterSettings, // same OpenAI-compat + reasoning fallbacks as OpenRouter
 	vLLM: vLLMSettings,
 	ollama: ollamaSettings,
 	openAICompatible: openaiCompatible,
