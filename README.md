@@ -28,6 +28,7 @@ Agents on your codebase. Checkpoints and live diffs. Any model or local host. Me
 
 - 📦 [Repository](https://github.com/thekingoffamily/404Brain)
 - 🚀 [Releases](https://github.com/thekingoffamily/404Brain/releases)
+- 🔧 [Build (step by step)](./BUILD.md)
 
 ### Contact
 
@@ -53,6 +54,7 @@ Based on Void by [voideditor](https://github.com/voideditor/void). Upstream Void
 
 - 📦 [Репозиторий](https://github.com/thekingoffamily/404Brain)
 - 🚀 [Релизы](https://github.com/thekingoffamily/404Brain/releases)
+- 🔧 [Сборка по шагам](./BUILD.md)
 
 ### Связь
 

@@ -9,7 +9,6 @@ import { Brain, Check, ChevronRight, DollarSign, ExternalLink, Lock, X } from 'l
 import { displayInfoOfProviderName, ProviderName, providerNames, localProviderNames, featureNames, FeatureName, isFeatureNameDisabled } from '../../../../common/voidSettingsTypes.js';
 import { ChatMarkdownRender } from '../markdown/ChatMarkdownRender.js';
 import { OllamaSetupInstructions, OneClickSwitchButton, SettingsForProvider, ModelDump } from '../void-settings-tsx/Settings.js';
-import { ColorScheme } from '../../../../../../../platform/theme/common/theme.js';
 import ErrorBoundary from '../sidebar-tsx/ErrorBoundary.js';
 import { isLinux } from '../../../../../../../base/common/platform.js';
 
@@ -46,14 +45,11 @@ const VoidIcon = () => {
 	const divRef = useRef<HTMLDivElement | null>(null)
 
 	useEffect(() => {
-		// void icon style
 		const updateTheme = () => {
-			const theme = themeService.getColorTheme().type
-			const isDark = theme === ColorScheme.DARK || theme === ColorScheme.HIGH_CONTRAST_DARK
 			if (divRef.current) {
 				divRef.current.style.maxWidth = '220px'
-				divRef.current.style.opacity = '50%'
-				divRef.current.style.filter = isDark ? '' : 'invert(1)' //brightness(.5)
+				divRef.current.style.opacity = '90%'
+				divRef.current.style.filter = '' // 404Brain logo is full-color
 			}
 		}
 		updateTheme()

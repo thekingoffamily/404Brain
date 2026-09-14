@@ -22,14 +22,30 @@ product.overrides.json
 *.snap.actual
 .vscode-test
 
-# Void added these:
+# Build / local runtime
 .tmp/
 .tmp2/
 .tool-versions
 src/vs/workbench/contrib/void/browser/react/out/**
 src/vs/workbench/contrib/void/browser/react/src2/**
 
-# Local-only (not published)
+# Local-only — NEVER commit (Cursor, AI agents, drafts, IDE junk)
 articles/
 .cursor/
-
+.cursorrules
+.cursorignore
+.claude/
+.claude-worktrees/
+.agents/
+.agent/
+.codex/
+.continue/
+.windsurf/
+.idea/
+.vs/
+*.code-workspace
+*.local.md
+*.local.json
+.env
+.env.*
+!.env.example
