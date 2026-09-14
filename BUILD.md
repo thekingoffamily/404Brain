@@ -97,7 +97,7 @@ To reset local IDE state: delete the `.tmp` folder.
 
 ---
 
-## 4. React UI (if you change React under `contrib/void`)
+## 4. React UI (if you change React under `contrib/brain`)
 
 ```bash
 npm run buildreact

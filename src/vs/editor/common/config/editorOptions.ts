@@ -3570,7 +3570,7 @@ class EditorQuickSuggestions extends BaseEditorOption<EditorOption.quickSuggesti
 		const defaults: InternalQuickSuggestionsOptions = {
 			other: 'on',
 			comments: 'off',
-			strings: 'on' // Void changed this setting
+			strings: 'on' // Brain changed this setting
 		};
 		const types: IJSONSchema[] = [
 			{ type: 'boolean' },

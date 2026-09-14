@@ -26,8 +26,8 @@ product.overrides.json
 .tmp/
 .tmp2/
 .tool-versions
-src/vs/workbench/contrib/void/browser/react/out/**
-src/vs/workbench/contrib/void/browser/react/src2/**
+src/vs/workbench/contrib/brain/browser/react/out/**
+src/vs/workbench/contrib/brain/browser/react/src2/**
 
 # Local-only — NEVER commit (Cursor, AI agents, drafts, IDE junk)
 articles/
@@ -49,3 +49,11 @@ articles/
 .env
 .env.*
 !.env.example
+
+__pycache__/
+*.pyc
+
+
+__pycache__/
+*.pyc
+

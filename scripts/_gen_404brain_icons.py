@@ -66,14 +66,14 @@ save_png(root / "resources/win32/logo_cube_noshadow.png", 1024)
 save_ico(root / "resources/win32/code.ico", [16, 24, 32, 48, 64, 128, 256])
 save_ico(root / "resources/server/favicon.ico", [16, 32, 48])
 
-save_ico(root / "void_icons/code.ico", [16, 24, 32, 48, 64, 128, 256])
-save_png(root / "void_icons/cubecircled.png", 512)
-save_png(root / "void_icons/logo_cube_noshadow.png", 1024)
-save_png(root / "void_icons/slice_of_void.png", 1024)
+save_ico(root / "brain_icons/code.ico", [16, 24, 32, 48, 64, 128, 256])
+save_png(root / "brain_icons/cubecircled.png", 512)
+save_png(root / "brain_icons/logo_cube_noshadow.png", 1024)
+save_png(root / "brain_icons/slice_of_brain.png", 1024)
 
 media = root / "src/vs/workbench/browser/parts/editor/media"
-save_png(media / "void_cube_noshadow.png", 1024)
-save_png(media / "slice_of_void.png", 1024)
+save_png(media / "brain_cube_noshadow.png", 1024)
+save_png(media / "slice_of_brain.png", 1024)
 
 icns_path = root / "resources/darwin/code.icns"
 try:

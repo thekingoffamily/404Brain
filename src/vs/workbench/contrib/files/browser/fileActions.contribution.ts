@@ -27,7 +27,7 @@ import { ThemeIcon } from '../../../../base/common/themables.js';
 import { IExplorerService } from './files.js';
 import { Codicon } from '../../../../base/common/codicons.js';
 import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
-import { VOID_OPEN_SETTINGS_ACTION_ID } from '../../void/browser/voidSettingsPane.js';
+import { BRAIN_OPEN_SETTINGS_ACTION_ID } from '../../void/browser/brainSettingsPane.js';
 
 // Contribute Global Actions
 
@@ -677,12 +677,12 @@ for (const menuId of [MenuId.EmptyEditorGroupContext, MenuId.EditorTabsBarContex
 // File menu
 
 
-// Void added this:
+// Brain added this:
 MenuRegistry.appendMenuItem(MenuId.MenubarFileMenu, {
 	group: '0_void',
 	command: {
-		id: VOID_OPEN_SETTINGS_ACTION_ID,
-		title: nls.localize({ key: 'openVoid', comment: ['&& denotes a mnemonic'] }, "&&Open Void Settings"),
+		id: BRAIN_OPEN_SETTINGS_ACTION_ID,
+		title: nls.localize({ key: 'openBrain', comment: ['&& denotes a mnemonic'] }, "&&Open Brain Settings"),
 	},
 	order: 1
 });

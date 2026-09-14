@@ -12,7 +12,7 @@ export interface ServerInstallOptions {
 	quality: string;
 	commit: string;
 	version: string;
-	release?: string; // void specific
+	release?: string; // 404Brain specific
 	extensionIds: string[];
 	envVariables: string[];
 	useSocketPath: boolean;
@@ -39,7 +39,7 @@ export class ServerInstallError extends Error {
 	}
 }
 
-const DEFAULT_DOWNLOAD_URL_TEMPLATE = 'https://github.com/thekingoffamily/404Brain/releases/download/${version}/void-reh-${os}-${arch}-${version}.tar.gz';
+const DEFAULT_DOWNLOAD_URL_TEMPLATE = 'https://github.com/thekingoffamily/404Brain/releases/download/${version}/brain-reh-${os}-${arch}-${version}.tar.gz';
 
 export async function installCodeServer(conn: SSHConnection, serverDownloadUrlTemplate: string | undefined, extensionIds: string[], envVariables: string[], platform: string | undefined, useSocketPath: boolean, logger: Log): Promise<ServerInstallResult> {
 	let shell = 'powershell';
@@ -317,7 +317,7 @@ if [[ ! -d $SERVER_DIR ]]; then
     fi
 fi
 
-# adjust platform for void download, if needed
+# adjust platform for 404Brain download, if needed
 if [[ $OS_RELEASE_ID = alpine ]]; then
     PLATFORM=$OS_RELEASE_ID
 fi

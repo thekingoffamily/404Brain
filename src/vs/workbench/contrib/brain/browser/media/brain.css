@@ -1,0 +1,204 @@
+/*--------------------------------------------------------------------------------------
+ *  Copyright 2025 Glass Devtools, Inc. All rights reserved.
+ *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
+ *--------------------------------------------------------------------------------------*/
+
+.monaco-editor .brain-sweepIdxBG {
+	background-color: var(--vscode-brain-sweepIdxBG);
+}
+
+.brain-sweepBG {
+	background-color: var(--vscode-brain-sweepBG);
+}
+
+.brain-highlightBG {
+	background-color: var(--vscode-brain-highlightBG);
+}
+
+.brain-greenBG {
+	background-color: var(--vscode-brain-greenBG);
+}
+
+.brain-redBG {
+	background-color: var(--vscode-brain-redBG);
+}
+
+
+/* Renamed from brain-watermark-button to brain-openfolder-button */
+.brain-openfolder-button {
+    padding: 8px 20px;
+    background-color: #306dce;
+    color: white;
+    border: none;
+    border-radius: 4px;
+    outline: none !important;
+	box-shadow: none !important;
+	cursor: pointer;
+	transition: background-color 0.2s ease;
+}
+.brain-openfolder-button:hover {
+    background-color: #2563eb;
+}
+.brain-openfolder-button:active {
+    background-color: #2563eb;
+}
+
+/* Added for Open SSH button with slightly darker color */
+.brain-openssh-button {
+    padding: 8px 20px;
+    background-color: #656565; /* Slightly darker than the #5a5a5a in the TS file */
+    color: white;
+    border: none;
+    border-radius: 4px;
+    outline: none !important;
+	box-shadow: none !important;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+.brain-openssh-button:hover {
+    background-color: #474747; /* Darker on hover */
+}
+.brain-openssh-button:active {
+    background-color: #474747;
+}
+
+
+.brain-settings-watermark-button {
+	margin: 8px 0;
+	padding: 8px 20px;
+	background-color: var(--vscode-input-background);
+	color: var(--vscode-input-foreground);
+	border: none;
+	border-radius: 4px;
+	outline: none !important;
+	box-shadow: none !important;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.brain-settings-watermark-button:hover {
+	filter: brightness(1.1);
+}
+
+.brain-settings-watermark-button:active {
+	filter: brightness(1.1);
+}
+
+.brain-link {
+	color: #3b82f6;
+	cursor: pointer;
+	transition: all 0.2s ease;
+}
+
+.brain-link:hover {
+	opacity: 80%;
+}
+
+/* styles for all containers used by void */
+.brain-scope {
+	--scrollbar-vertical-width: 8px;
+	--scrollbar-horizontal-height: 6px;
+}
+
+/* Target both brain-scope and all its descendants with scrollbars */
+.brain-scope,
+.brain-scope * {
+	scrollbar-width: thin !important;
+	scrollbar-color: var(--brain-bg-1) var(--brain-bg-3) !important;
+	/* For Firefox */
+}
+
+.brain-scope::-webkit-scrollbar,
+.brain-scope *::-webkit-scrollbar {
+	width: var(--scrollbar-vertical-width) !important;
+	height: var(--scrollbar-horizontal-height) !important;
+	background-color: var(--brain-bg-3) !important;
+}
+
+.brain-scope::-webkit-scrollbar-thumb,
+.brain-scope *::-webkit-scrollbar-thumb {
+	background-color: var(--brain-bg-1) !important;
+	border-radius: 4px !important;
+	border: none !important;
+	-webkit-box-shadow: none !important;
+	box-shadow: none !important;
+}
+
+.brain-scope::-webkit-scrollbar-thumb:hover,
+.brain-scope *::-webkit-scrollbar-thumb:hover {
+	background-color: var(--brain-bg-1) !important;
+	filter: brightness(1.1) !important;
+}
+
+.brain-scope::-webkit-scrollbar-thumb:active,
+.brain-scope *::-webkit-scrollbar-thumb:active {
+	background-color: var(--brain-bg-1) !important;
+	filter: brightness(1.2) !important;
+}
+
+.brain-scope::-webkit-scrollbar-track,
+.brain-scope *::-webkit-scrollbar-track {
+	background-color: var(--brain-bg-3) !important;
+	border: none !important;
+}
+
+.brain-scope::-webkit-scrollbar-corner,
+.brain-scope *::-webkit-scrollbar-corner {
+	background-color: var(--brain-bg-3) !important;
+}
+
+/* Add brain-scrollable-element styles to match */
+.brain-scrollable-element {
+	background-color: var(--vscode-editor-background);
+	--scrollbar-vertical-width: 14px;
+	--scrollbar-horizontal-height: 6px;
+	overflow: auto;
+	/* Ensure scrollbars are shown when needed */
+}
+
+.brain-scrollable-element,
+.brain-scrollable-element * {
+	scrollbar-width: thin !important;
+	/* For Firefox */
+	scrollbar-color: var(--brain-bg-1) var(--brain-bg-3) !important;
+	/* For Firefox */
+}
+
+.brain-scrollable-element::-webkit-scrollbar,
+.brain-scrollable-element *::-webkit-scrollbar {
+	width: var(--scrollbar-vertical-width) !important;
+	height: var(--scrollbar-horizontal-height) !important;
+	background-color: var(--brain-bg-3) !important;
+}
+
+.brain-scrollable-element::-webkit-scrollbar-thumb,
+.brain-scrollable-element *::-webkit-scrollbar-thumb {
+	background-color: var(--brain-bg-1) !important;
+	border-radius: 4px !important;
+	border: none !important;
+	-webkit-box-shadow: none !important;
+	box-shadow: none !important;
+}
+
+.brain-scrollable-element::-webkit-scrollbar-thumb:hover,
+.brain-scrollable-element *::-webkit-scrollbar-thumb:hover {
+	background-color: var(--brain-bg-1) !important;
+	filter: brightness(1.1) !important;
+}
+
+.brain-scrollable-element::-webkit-scrollbar-thumb:active,
+.brain-scrollable-element *::-webkit-scrollbar-thumb:active {
+	background-color: var(--brain-bg-1) !important;
+	filter: brightness(1.2) !important;
+}
+
+.brain-scrollable-element::-webkit-scrollbar-track,
+.brain-scrollable-element *::-webkit-scrollbar-track {
+	background-color: var(--brain-bg-3) !important;
+	border: none !important;
+}
+
+.brain-scrollable-element::-webkit-scrollbar-corner,
+.brain-scrollable-element *::-webkit-scrollbar-corner {
+	background-color: var(--brain-bg-3) !important;
+}

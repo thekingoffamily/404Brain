@@ -21,10 +21,10 @@ export interface IServerConfig {
 	version: string;
 	commit: string;
 	quality: string;
-	release?: string; // void-like specific
+	release?: string; // brain-like specific
 	serverApplicationName: string;
 	serverDataFolderName: string;
-	serverDownloadUrlTemplate?: string; // void-like specific
+	serverDownloadUrlTemplate?: string; // brain-like specific
 }
 
 export async function getVSCodeServerConfig(): Promise<IServerConfig> {

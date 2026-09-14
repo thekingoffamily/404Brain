@@ -9,7 +9,7 @@
 	/>
 </div>
 
-**404Brain** — AI-first desktop IDE. Personal fork of [Void](https://github.com/voideditor/void) / [VS Code](https://github.com/microsoft/vscode).
+**404Brain** — AI-first desktop IDE, based on [VS Code](https://github.com/microsoft/vscode).
 
 Agents on your codebase. Checkpoints and live diffs. Any model or local host. Messages go straight to your providers — your data stays yours.
 
@@ -26,18 +26,18 @@ Agents on your codebase. Checkpoints and live diffs. Any model or local host. Me
 
 ### Links
 
-- 📦 [Repository](https://github.com/thekingoffamily/404Brain)
-- 🚀 [Releases](https://github.com/thekingoffamily/404Brain/releases)
-- 🔧 [Build (step by step)](./BUILD.md)
+- Repository: https://github.com/thekingoffamily/404Brain
+- Releases: https://github.com/thekingoffamily/404Brain/releases
+- Build (step by step): [BUILD.md](./BUILD.md)
 
 ### Contact
 
-- ✉️ Email: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
-- ✈️ Telegram: [@palapalaru](https://t.me/palapalaru)
+- Email: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
+- Telegram: [@palapalaru](https://t.me/palapalaru)
 
 ### Credits
 
-Based on Void by [voideditor](https://github.com/voideditor/void). Upstream Void is deprecated; **404Brain** continues as an independent fork.
+Built on the open-source [VS Code](https://github.com/microsoft/vscode) codebase (MIT).
 
 ---
 
@@ -52,15 +52,15 @@ Based on Void by [voideditor](https://github.com/voideditor/void). Upstream Void
 
 ### Ссылки
 
-- 📦 [Репозиторий](https://github.com/thekingoffamily/404Brain)
-- 🚀 [Релизы](https://github.com/thekingoffamily/404Brain/releases)
-- 🔧 [Сборка по шагам](./BUILD.md)
+- Репозиторий: https://github.com/thekingoffamily/404Brain
+- Релизы: https://github.com/thekingoffamily/404Brain/releases
+- Сборка по шагам: [BUILD.md](./BUILD.md)
 
 ### Связь
 
-- ✉️ Почта: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
-- ✈️ Telegram: [@palapalaru](https://t.me/palapalaru)
+- Почта: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
+- Telegram: [@palapalaru](https://t.me/palapalaru)
 
 ### Благодарности
 
-Основано на Void от [voideditor](https://github.com/voideditor/void). Upstream Void больше не развивается; **404Brain** — самостоятельный форк.
+Основано на открытом коде [VS Code](https://github.com/microsoft/vscode) (MIT).

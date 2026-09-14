@@ -13,7 +13,7 @@ export interface ServerInstallOptions {
 	quality: string;
 	commit: string;
 	version: string;
-	release?: string; // void specific
+	release?: string; // 404Brain specific
 	extensionIds: string[];
 	envVariables: string[];
 	serverApplicationName: string;
@@ -39,7 +39,7 @@ export class ServerInstallError extends Error {
 	}
 }
 
-const DEFAULT_DOWNLOAD_URL_TEMPLATE = 'https://github.com/thekingoffamily/404Brain/releases/download/${version}/void-reh-${os}-${arch}-${version}.tar.gz';
+const DEFAULT_DOWNLOAD_URL_TEMPLATE = 'https://github.com/thekingoffamily/404Brain/releases/download/${version}/brain-reh-${os}-${arch}-${version}.tar.gz';
 
 export async function installCodeServer(wslManager: WSLManager, distroName: string, serverDownloadUrlTemplate: string | undefined, extensionIds: string[], envVariables: string[], logger: Log): Promise<ServerInstallResult> {
 	const scriptId = crypto.randomBytes(12).toString('hex');
@@ -88,7 +88,7 @@ export async function installCodeServer(wslManager: WSLManager, distroName: stri
 
 	const exitCode = parseInt(resultMap.exitCode, 10);
 	if (exitCode !== 0) {
-		throw new ServerInstallError(`Couldn't install void server on remote server, install script returned non-zero exit status`);
+		throw new ServerInstallError(`Couldn't install 404Brain server on remote server, install script returned non-zero exit status`);
 	}
 
 	const listeningOn = parseInt(resultMap.listeningOn, 10);

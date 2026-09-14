@@ -1,8 +1,8 @@
 {
 	"nameShort": "404Brain",
 	"nameLong": "404Brain",
-	"voidVersion": "1.4.9",
-	"voidRelease": "0044",
+	"brainVersion": "1.4.9",
+	"brainRelease": "0044",
 	"applicationName": "404brain",
 	"dataFolderName": ".404brain-editor",
 	"win32MutexName": "404braineditor",
