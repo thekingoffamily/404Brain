@@ -1,61 +1,64 @@
-## Void is now deprecated.
-Void is deprecated and no longer accepting contributions.
-Thank you to everyone who contributed, both with lines of code and support from the community. Void remains open source and is still one of the best references to use when forking VS Code.
-
-
-## Download
-
-To view a list of newer Void forks, see [Void Forks](http://github.com/voideditor/void-forks/).
-
-To download an old version of Void, see [Releases](https://github.com/voideditor/void/releases).
-
-## Forking VS Code
-
-If you're forking VS Code, you might still want to reference Void's logic, and see our [Codebase Guide](https://github.com/voideditor/void/blob/main/VOID_CODEBASE_GUIDE.md) and [How to Contribute](https://github.com/voideditor/void/blob/main/HOW_TO_CONTRIBUTE.md).
-
-- We mount React + Tailwind. This is not possible in plain VS Code, and required extending the build pipeline to compile React and [scope](https://github.com/andrewpareles/scope-tailwind) Tailwind ourselves.
-
-- You can copy our GitHub Actions to package, sign, and auto-update Void. VS Code's build pipeline is private, so this is normally very hard.
-
-- Our AI provider code is built from scratch, allowing us to support autocomplete (FIM) and other custom responses. We expose grammars for common `<thinking>` tags, tool tags, etc. Feel free to reference our architecture for using IPC and satisfying CSP.
-
-- Use our custom services to edit files. EditCodeService lets you show diffs as code streams in, even token by token. VoidModelService lets you edit files in the background and syncs OS files with your text buffers.
-
-- Everything we've done is 100% open source. See [repos](https://github.com/orgs/voideditor/repositories) for a complete picture of all the repos that make up Void.
-
-
-
-# Welcome to Void.
+# 404Brain
 
 <div align="center">
 	<img
-		src="./src/vs/workbench/browser/parts/editor/media/slice_of_void.png"
-	 	alt="Void Welcome"
-		width="300"
-	 	height="300"
+		src="./404brain-logo.png"
+		alt="404Brain logo"
+		width="220"
+		height="220"
 	/>
 </div>
 
-Use AI agents on your codebase, checkpoint and visualize changes, and bring any model or host locally. Void sends messages directly to providers without retaining your data.
+**404Brain** — AI-first desktop IDE. Personal fork of [Void](https://github.com/voideditor/void) / [VS Code](https://github.com/microsoft/vscode).
 
-This repo contains the full sourcecode for Void's Desktop app. If you're new, welcome!
+Agents on your codebase. Checkpoints and live diffs. Any model or local host. Messages go straight to your providers — your data stays yours.
 
-- 🧭 [Website](https://voideditor.com)
+---
 
-- 🚙 [Roadmap](https://github.com/orgs/voideditor/projects/2)
+## English
 
-- 🔨 [Contribute](https://github.com/voideditor/void/blob/main/HOW_TO_CONTRIBUTE.md)
+### Features
 
+- AI agents over real project files
+- Checkpoints and visual diffs as code streams in
+- Bring your own models / local hosts (OpenAI-compatible, Ollama, and more)
+- Full desktop app source in this repository
 
+### Links
 
+- 📦 [Repository](https://github.com/thekingoffamily/404Brain)
+- 🚀 [Releases](https://github.com/thekingoffamily/404Brain/releases)
 
-## Reference
+### Contact
 
-Void is a fork of the [vscode](https://github.com/microsoft/vscode) repository. For a guide to our codebase, see [VOID_CODEBASE_GUIDE](https://github.com/voideditor/void/blob/main/VOID_CODEBASE_GUIDE.md).
+- ✉️ Email: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
+- ✈️ Telegram: [@palapalaru](https://t.me/palapalaru)
 
-For a guide on how to develop your own version of Void, see [HOW_TO_CONTRIBUTE](https://github.com/voideditor/void/blob/main/HOW_TO_CONTRIBUTE.md) and [void-builder](https://github.com/voideditor/void-builder).
+### Credits
 
+Based on Void by [voideditor](https://github.com/voideditor/void). Upstream Void is deprecated; **404Brain** continues as an independent fork.
 
+---
 
-## Support
-You can always reach us in our [Discord server](https://discord.gg/RSNjgaugJs) or contact us via email at hello@voideditor.com.
+## Русский
+
+### Возможности
+
+- AI-агенты по реальному проекту
+- Чекпоинты и визуальные диффы по мере стриминга кода
+- Свои модели и локальные хосты (OpenAI-compatible, Ollama и др.)
+- Полный исходник десктоп-приложения в этом репозитории
+
+### Ссылки
+
+- 📦 [Репозиторий](https://github.com/thekingoffamily/404Brain)
+- 🚀 [Релизы](https://github.com/thekingoffamily/404Brain/releases)
+
+### Связь
+
+- ✉️ Почта: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
+- ✈️ Telegram: [@palapalaru](https://t.me/palapalaru)
+
+### Благодарности
+
+Основано на Void от [voideditor](https://github.com/voideditor/void). Upstream Void больше не развивается; **404Brain** — самостоятельный форк.

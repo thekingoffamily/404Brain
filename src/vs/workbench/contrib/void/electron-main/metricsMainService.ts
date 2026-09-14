@@ -40,7 +40,7 @@ export class MetricsMainService extends Disposable implements IMetricsService {
 	private _initProperties: object = {}
 
 
-	// helper - looks like this is stored in a .vscdb file in ~/Library/Application Support/Void
+	// helper - looks like this is stored in a .vscdb file in ~/Library/Application Support/404Brain
 	private _memoStorage(key: string, target: StorageTarget, setValIfNotExist?: string) {
 		const currVal = this._appStorage.get(key, StorageScope.APPLICATION)
 		if (currVal !== undefined) return currVal
@@ -125,7 +125,7 @@ export class MetricsMainService extends Disposable implements IMetricsService {
 
 		const didOptOut = this._appStorage.getBoolean(OPT_OUT_KEY, StorageScope.APPLICATION, false)
 
-		console.log('User is opted out of basic Void metrics?', didOptOut)
+		console.log('User is opted out of basic 404Brain metrics?', didOptOut)
 		if (didOptOut) {
 			this.client.optOut()
 		}
@@ -135,7 +135,7 @@ export class MetricsMainService extends Disposable implements IMetricsService {
 		}
 
 
-		console.log('Void posthog metrics info:', JSON.stringify(identifyMessage, null, 2))
+		console.log('404Brain posthog metrics info:', JSON.stringify(identifyMessage, null, 2))
 	}
 
 

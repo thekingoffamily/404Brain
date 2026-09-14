@@ -1,12 +1,10 @@
-# Void Codebase Guide
+# 404Brain Codebase Guide
 
-The Void codebase is not as intimidating as it seems!
+The 404Brain codebase is not as intimidating as it seems!
 
-Most of Void's code lives in the folder `src/vs/workbench/contrib/void/`.
+Most of the AI / agent code lives in `src/vs/workbench/contrib/void/`.
 
-The purpose of this document is to explain how Void's codebase works. If you want build instructions instead, see [Contributing](https://github.com/voideditor/void/blob/main/HOW_TO_CONTRIBUTE.md).
-
-
+This document explains how that code works.
 
 
 
@@ -14,7 +12,9 @@ The purpose of this document is to explain how Void's codebase works. If you wan
 
 
 
-## Void Codebase Guide
+
+
+## 404Brain Codebase Guide
 
 ### VSCode Rundown
 Here's a VSCode rundown if you're just getting started with Void. You can also see Microsoft's [wiki](https://github.com/microsoft/vscode/wiki/Source-Code-Organization) for some pictures. VSCode is an Electron app. Electron runs two processes: a **main** process (for internals) and a **browser** process (browser means HTML in general, not just "web browser").
