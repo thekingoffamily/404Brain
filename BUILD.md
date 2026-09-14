@@ -1,5 +1,7 @@
 # Build 404Brain (local)
 
+[English](./BUILD.md) · [Русский](./BUILD.ru.md)
+
 Node **20.18.2** (see `.nvmrc`). Path to the repo must **not** contain spaces.
 
 ---
@@ -132,15 +134,3 @@ NODE_OPTIONS="--max-old-space-size=8192" npm run buildreact
 
 - Email: [thekingoffamily2017@gmail.com](mailto:thekingoffamily2017@gmail.com)
 - Telegram: [@palapalaru](https://t.me/palapalaru)
-
----
-
-## Русский — коротко по шагам
-
-1. Поставь Node **20.18.2** и C++ build tools (на Windows — VS 2022, см. выше).
-2. `git clone https://github.com/thekingoffamily/404Brain` → `cd 404Brain` → `npm install`.
-3. `npm run watch` — жди `0 errors`.
-4. Windows: `.\scripts\code.bat --user-data-dir .\.tmp\user-data --extensions-dir .\.tmp\extensions`  
-   Mac/Linux: `./scripts/code.sh --user-data-dir ./.tmp/user-data --extensions-dir ./.tmp/extensions`
-5. Меняешь код → в окне 404Brain жми **Reload** (`Ctrl+R` / `Cmd+R`).
-6. Трогал React → `npm run buildreact`.
