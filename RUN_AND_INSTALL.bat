@@ -36,6 +36,16 @@ call npm -v
 echo     PATH tip: system Node can stay 23 - this bat uses portable Node 20.
 echo.
 
+REM --- Prefer VS 2022 Build Tools with Spectre ^(Community often lacks Spectre^) ---
+call :ENSURE_VCTOOLS
+if errorlevel 1 (
+  echo [!] C++ / Spectre not ready. Run INSTALL_BUILD_TOOLS.bat first.
+  set /p OPENBT=Open INSTALL_BUILD_TOOLS.bat now? [Y/N]: 
+  if /I "!OPENBT!"=="Y" call "%~dp0INSTALL_BUILD_TOOLS.bat"
+  pause
+  exit /b 1
+)
+
 REM Fresh install if node_modules was built with wrong Node
 if exist "node_modules\" (
   if exist ".tools\.need_reinstall" (
@@ -51,17 +61,9 @@ if not exist "node_modules\" (
   if errorlevel 1 (
     echo.
     echo [!] npm install failed ^(native C++ build^).
-    echo     Node is OK. Missing Visual C++ / Spectre libs.
-    echo.
-    echo     FIX: run INSTALL_BUILD_TOOLS.bat  ^(Admin if asked^)
-    echo     Wait until installer finishes, reboot if Windows asks,
-    echo     then:
-    echo       rmdir /s /q node_modules
-    echo       RUN_AND_INSTALL.bat
-    echo.
-    echo     Or manual: Visual Studio Installer - Modify -
-    echo       Desktop development with C++ + Node.js build tools
-    echo       + Spectre-mitigated libs / ATL / MFC Spectre
+    echo     Tools look installed, but node-gyp still failed.
+    echo     Try: reboot, then rmdir /s /q node_modules ^& RUN_AND_INSTALL.bat
+    echo     Or re-run INSTALL_BUILD_TOOLS.bat and Modify Community too ^(Spectre^).
     echo.
     set /p OPENBT=Open INSTALL_BUILD_TOOLS.bat now? [Y/N]: 
     if /I "!OPENBT!"=="Y" call "%~dp0INSTALL_BUILD_TOOLS.bat"
@@ -145,4 +147,65 @@ if not exist "%NODE_HOME%\node.exe" (
 
 set "PATH=%NODE_HOME%;%PATH%"
 echo [ok] Portable Node ready: %NODE_HOME%
+exit /b 0
+
+
+:ENSURE_VCTOOLS
+set "VSWHERE=%ProgramFiles(x86)%\Microsoft Visual Studio\Installer\vswhere.exe"
+set "VS_PATH="
+set "VCVARS="
+
+REM Prefer Build Tools 2022, then Community 2022
+if exist "%VSWHERE%" (
+  for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -products Microsoft.VisualStudio.Product.BuildTools -version "[17.0,18.0)" -property installationPath`) do set "VS_PATH=%%i"
+  if not defined VS_PATH (
+    for /f "usebackq tokens=*" %%i in (`"%VSWHERE%" -products Microsoft.VisualStudio.Product.Community -version "[17.0,18.0)" -property installationPath`) do set "VS_PATH=%%i"
+  )
+)
+
+if not defined VS_PATH (
+  if exist "%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools\VC\Auxiliary\Build\vcvars64.bat" (
+    set "VS_PATH=%ProgramFiles(x86)%\Microsoft Visual Studio\2022\BuildTools"
+  ) else if exist "%ProgramFiles%\Microsoft Visual Studio\2022\Community\VC\Auxiliary\Build\vcvars64.bat" (
+    set "VS_PATH=%ProgramFiles%\Microsoft Visual Studio\2022\Community"
+  )
+)
+
+if not defined VS_PATH (
+  echo [!] Visual Studio 2022 C++ tools not found
+  exit /b 1
+)
+
+set "VCVARS=!VS_PATH!\VC\Auxiliary\Build\vcvars64.bat"
+if not exist "!VCVARS!" (
+  echo [!] vcvars64.bat missing under !VS_PATH!
+  exit /b 1
+)
+
+REM Spectre libs required by @vscode/* native modules
+set "HAS_SPECTRE=0"
+for /d %%D in ("!VS_PATH!\VC\Tools\MSVC\*") do (
+  if exist "%%~D\lib\spectre\x64\" set "HAS_SPECTRE=1"
+)
+if "!HAS_SPECTRE!"=="0" (
+  echo [!] Spectre-mitigated libs missing under !VS_PATH!
+  echo     Run INSTALL_BUILD_TOOLS.bat ^(adds Spectre / ATL / MFC^)
+  exit /b 1
+)
+
+echo [ok] VS C++: !VS_PATH!
+echo [..] Loading vcvars64...
+call "!VCVARS!" >nul
+if errorlevel 1 (
+  echo [!] vcvars64 failed
+  exit /b 1
+)
+set "GYP_MSVS_VERSION=2022"
+set "npm_config_msvs_version=2022"
+where cl >nul 2>&1
+if errorlevel 1 (
+  echo [!] cl.exe not on PATH after vcvars64
+  exit /b 1
+)
+echo [ok] cl.exe ready ^(Spectre OK^)
 exit /b 0
