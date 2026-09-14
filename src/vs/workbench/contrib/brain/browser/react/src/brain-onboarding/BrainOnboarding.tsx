@@ -3,14 +3,13 @@
  *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
  *--------------------------------------------------------------------------------------*/
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAccessor, useIsDark, useSettingsState } from '../util/services.js';
 import { Brain, Check, ChevronRight, DollarSign, ExternalLink, Lock, X } from 'lucide-react';
 import { displayInfoOfProviderName, ProviderName, providerNames, localProviderNames, featureNames, FeatureName, isFeatureNameDisabled } from '../../../../common/brainSettingsTypes.js';
 import { ChatMarkdownRender } from '../markdown/ChatMarkdownRender.js';
 import { OllamaSetupInstructions, OneClickSwitchButton, SettingsForProvider, ModelDump } from '../brain-settings-tsx/Settings.js';
 import ErrorBoundary from '../sidebar-tsx/ErrorBoundary.js';
-import { isLinux } from '../../../../../../../base/common/platform.js';
 
 const OVERRIDE_VALUE = false
 
@@ -36,28 +35,6 @@ export const BrainOnboarding = () => {
 			</div>
 		</div>
 	)
-}
-
-const BrainIcon = () => {
-	const accessor = useAccessor()
-	const themeService = accessor.get('IThemeService')
-
-	const divRef = useRef<HTMLDivElement | null>(null)
-
-	useEffect(() => {
-		const updateTheme = () => {
-			if (divRef.current) {
-				divRef.current.style.maxWidth = '220px'
-				divRef.current.style.opacity = '90%'
-				divRef.current.style.filter = '' // 404Brain logo is full-color
-			}
-		}
-		updateTheme()
-		const d = themeService.onDidColorThemeChange(updateTheme)
-		return () => d.dispose()
-	}, [])
-
-	return <div ref={divRef} className='@@brain-brain-icon' />
 }
 
 const FADE_DURATION_MS = 2000
@@ -100,14 +77,14 @@ const cloudProviders: ProviderName[] = ['googleVertex', 'liteLLM', 'microsoftAzu
 
 // Data structures for provider tabs
 const providerNamesOfTab: Record<TabName, ProviderName[]> = {
-	Free: ['gemini', 'openRouter'],
+	Free: ['gemini', 'openRouter', 'aiTunnel'],
 	Local: localProviderNames,
-	Paid: providerNames.filter(pn => !(['gemini', 'openRouter', ...localProviderNames, ...cloudProviders] as string[]).includes(pn)) as ProviderName[],
+	Paid: providerNames.filter(pn => !(['gemini', 'openRouter', 'aiTunnel', ...localProviderNames, ...cloudProviders] as string[]).includes(pn)) as ProviderName[],
 	'Cloud/Other': cloudProviders,
 };
 
 const descriptionOfTab: Record<TabName, string> = {
-	Free: `Providers with a 100% free tier. Add as many as you'd like!`,
+	Free: `Providers with free tiers or ultra-low pricing. Add as many as you'd like!`,
 	Paid: `Connect directly with any provider (bring your own key).`,
 	Local: `Active providers should appear automatically. Add as many as you'd like! `,
 	'Cloud/Other': `Add as many as you'd like! Reach out for custom configuration requests.`,
@@ -212,6 +189,14 @@ const AddProvidersPage = ({ pageIndex, setPageIndex }: { pageIndex: number, setP
 							<span
 								data-tooltip-id="brain-tooltip-provider-info"
 								data-tooltip-content="OpenRouter offers 50 free messages a day, and 1000 if you deposit $10. Only applies to models labeled ':free'."
+								data-tooltip-place="right"
+								className="ml-1 text-xs align-top text-blue-400"
+							>*</span>
+						)}
+						{providerName === 'aiTunnel' && (
+							<span
+								data-tooltip-id="brain-tooltip-provider-info"
+								data-tooltip-content="AITUNNEL — 200+ models, pay in RUB, no VPN. No monthly fee, per-token pricing, signup ruble bonus. Models for RU: deepseek-v4-pro, claude-sonnet-5, gpt-5.6-terra."
 								data-tooltip-place="right"
 								className="ml-1 text-xs align-top text-blue-400"
 							>*</span>
@@ -506,9 +491,9 @@ const BrainOnboardingContent = () => {
 	}
 
 	const providerNamesOfWantToUseOption: { [wantToUseOption in WantToUseOption]: ProviderName[] } = {
-		smart: ['anthropic', 'openAI', 'gemini', 'openRouter'],
+		smart: ['anthropic', 'openAI', 'gemini', 'openRouter', 'aiTunnel'],
 		private: ['ollama', 'vLLM', 'openAICompatible', 'lmStudio'],
-		cheap: ['gemini', 'deepseek', 'openRouter', 'ollama', 'vLLM'],
+		cheap: ['gemini', 'deepseek', 'openRouter', 'ollama', 'vLLM', 'aiTunnel'],
 		all: providerNames,
 	}
 
@@ -593,12 +578,6 @@ const BrainOnboardingContent = () => {
 			content={
 				<div className='flex flex-col items-center gap-8'>
 					<div className="text-5xl font-light text-center">Welcome to 404Brain</div>
-
-					{/* Slice of 404Brain image */}
-					<div className='max-w-md w-full h-[30vh] mx-auto flex items-center justify-center'>
-						{!isLinux && <BrainIcon />}
-					</div>
-
 
 					<FadeIn
 						delayMs={1000}

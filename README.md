@@ -29,10 +29,17 @@ Need Node **20.18.2**. On Windows also VS 2022 C++ build tools (see [BUILD.md](.
 
 ## Features
 
-- AI agents over real project files
-- Checkpoints and visual diffs as code streams in
-- Bring your own models / local hosts (OpenAI-compatible, Ollama, and more)
+- AI agents over real project files — **Agent** mode (read + edit + terminal + MCP), **Gather** (read-only), **Normal** (plain chat)
+- Checkpoints and visual diffs as code streams in, roll back per-file from chat history
+- **Quick Edit (Ctrl+K)** inline edits, **Apply** code blocks, **Autocomplete** (FIM), **SCM** commit-message writer
+- **SSH** and **WSL** remote development — bundled `open-remote-ssh` and `open-remote-wsl` extensions
+- Bring your own models / local hosts (OpenAI-compatible, Ollama, vLLM, LM Studio, LiteLLM, and more)
+- **MCP** (Model Context Protocol) — plug external tools into the agent
 - Full desktop app source in this repository
+
+## Providers
+
+Nearly 20 providers: OpenAI, Anthropic, Google Gemini, DeepSeek, Groq, xAI, Mistral, OpenRouter, AWS Bedrock, Azure, Vertex, plus **AITUNNEL** — 200+ models, pay in RUB, no VPN.
 
 ## Links
 

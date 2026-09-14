@@ -27,7 +27,7 @@ import { ThemeIcon } from '../../../../base/common/themables.js';
 import { IExplorerService } from './files.js';
 import { Codicon } from '../../../../base/common/codicons.js';
 import { Categories } from '../../../../platform/action/common/actionCommonCategories.js';
-import { BRAIN_OPEN_SETTINGS_ACTION_ID } from '../../void/browser/brainSettingsPane.js';
+import { BRAIN_OPEN_SETTINGS_ACTION_ID } from '../../brain/browser/brainSettingsPane.js';
 
 // Contribute Global Actions
 

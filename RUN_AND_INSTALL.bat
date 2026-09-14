@@ -36,6 +36,9 @@ call npm -v
 echo     PATH tip: system Node can stay 23 - this bat uses portable Node 20.
 echo.
 
+REM --- Heavy caches off C: ^(Electron alone eats several GB^) ---
+call :ENSURE_OFFDISK_CACHE
+
 REM --- Prefer VS 2022 Build Tools with Spectre ^(Community often lacks Spectre^) ---
 call :ENSURE_VCTOOLS
 if errorlevel 1 (
@@ -46,14 +49,14 @@ if errorlevel 1 (
   exit /b 1
 )
 
-REM Need ~8+ GB free on C: for node-gyp / MSBuild PDBs
+REM Need ~12+ GB free on C: ^(node_modules + Electron extract live on repo drive^)
 for /f "tokens=3" %%a in ('dir /-c C:\ 2^>nul ^| findstr /C:"bytes free"') do set "FREEBYTES=%%a"
 if defined FREEBYTES (
   set /a FREEGBapprox=!FREEBYTES:~0,-9! 2>nul
-  if defined FREEGBapprox if !FREEGBapprox! LSS 6 (
-    echo [!] C: has only ~!FREEGBapprox! GB free. Native build needs ~8+ GB.
-    echo     Free space ^(Docker cache, Android, .gradle, Recycle Bin^), then retry.
-    echo     Biggest usual hog: %%LOCALAPPDATA%%\Docker
+  if defined FREEGBapprox if !FREEGBapprox! LSS 12 (
+    echo [!] C: has only ~!FREEGBapprox! GB free. Need ~12+ GB for npm install.
+    echo     Free space, then retry. Docker:  docker system prune -af --volumes
+    echo     Hog tip: %%LOCALAPPDATA%%\Docker
     pause
     exit /b 1
   )
@@ -230,4 +233,25 @@ if errorlevel 1 (
   exit /b 1
 )
 echo [ok] cl.exe ready ^(Spectre OK^)
+exit /b 0
+
+
+:ENSURE_OFFDISK_CACHE
+REM Prefer J: ^(lots of free space^), else I:, else keep default on C:
+set "CACHE_ROOT="
+if exist "J:\" set "CACHE_ROOT=J:\404Brain-cache"
+if not defined CACHE_ROOT if exist "I:\" set "CACHE_ROOT=I:\404Brain-cache"
+if not defined CACHE_ROOT (
+  echo [..] No J:/I: drive - npm cache stays on C:
+  exit /b 0
+)
+if not exist "%CACHE_ROOT%" mkdir "%CACHE_ROOT%"
+if not exist "%CACHE_ROOT%\npm" mkdir "%CACHE_ROOT%\npm"
+if not exist "%CACHE_ROOT%\electron" mkdir "%CACHE_ROOT%\electron"
+if not exist "%CACHE_ROOT%\node-gyp" mkdir "%CACHE_ROOT%\node-gyp"
+set "npm_config_cache=%CACHE_ROOT%\npm"
+set "ELECTRON_CACHE=%CACHE_ROOT%\electron"
+set "electron_config_cache=%CACHE_ROOT%\electron"
+set "npm_config_devdir=%CACHE_ROOT%\node-gyp"
+echo [ok] npm/Electron cache on %CACHE_ROOT% ^(keeps C: freer^)
 exit /b 0

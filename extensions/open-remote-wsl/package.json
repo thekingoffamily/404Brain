@@ -1,6 +1,7 @@
 {
 	"name": "open-remote-wsl",
 	"displayName": "Remote - WSL",
+	"publisher": "thekingoffamily",
 	"description": "Open any folder in the Windows Subsystem for Linux (WSL).",
 	"version": "0.0.4",
 	"icon": "resources/icon.png",

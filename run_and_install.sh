@@ -33,16 +33,17 @@ fi
 echo
 
 export NODE_OPTIONS="${NODE_OPTIONS:---max-old-space-size=8192}"
-echo "[..] npm run compile  (first time = several minutes)"
-npm run compile
-echo
 
 if [[ ! -d src/vs/workbench/contrib/brain/browser/react/out ]]; then
   echo "[..] npm run buildreact"
-  npm run buildreact || echo "[!] buildreact failed — continuing anyway"
+  npm run buildreact
 else
   echo "[ok] react/out present — skip buildreact"
 fi
+echo
+
+echo "[..] npm run compile  (first time = several minutes)"
+npm run compile
 echo
 
 echo "[..] launching 404Brain..."
