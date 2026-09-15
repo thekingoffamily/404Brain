@@ -132,8 +132,13 @@ browser/react/src/
 
 ## История работ
 
-### [current] — сессия 1.7.0 (в работе)
-Состояние: **в разработке** (предыдущий релиз — v1.6.2).
+### [current] — сессия 1.8.0 (в работе)
+Состояние: **в разработке** (предыдущий релиз — v1.7.0).
+
+### Прошлые сессии
+
+### сессия 1.7.0 (завершена)
+Состояние: **релиз v1.7.0 выпущен** (404Brain-win32-x64-1.7.0.zip, tag v1.7.0)
 
 Сделано в этой сессии:
 1. **Дефолтные тема и иконки (Bearded)**:
@@ -162,8 +167,11 @@ browser/react/src/
 4. **docs/**: `docs/readme.md`, `docs/architecture.md`, `docs/tools-and-skills.md`, `docs/build-and-run.md`.
 5. **product.json**: `brainVersion` → 1.7.0, `brainRelease` → 0049.
 6. **compile** ✅ (0 ошибок).
-
-### Прошлые сессии
+7. **Сборка и релиз**: полная сборка `vscode-win32-x64` успешна (~25 мин), продукт проверен
+   (extensions beardedtheme/beardedicons в билде, product.json 1.7.0/0049); выпущен
+   `404Brain-win32-x64-1.7.0.zip`. Кейс: package.json расширений с UTF-8 BOM роняет этап
+   `bundle-non-native-extensions-build` — сохранённые PowerShell JSON пишем без BOM (см. docs/build-and-run.md).
+8. Релиз `v1.7.0` (коммит `cac33bf1`).
 
 ### сессия 1.6.2 (завершена)
 Состояние: **релиз v1.6.2 выпущен** (404Brain-win32-x64-1.6.2.zip, tag v1.6.2)
