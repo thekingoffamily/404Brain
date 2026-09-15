@@ -18,6 +18,7 @@ export interface IBrainModelService {
 	getModelFromFsPath(fsPath: string): BrainModelType;
 	getModelSafe(uri: URI): Promise<BrainModelType>;
 	saveModel(uri: URI): Promise<void>;
+	getModelFSPaths(): string[];
 
 }
 
@@ -77,6 +78,10 @@ class BrainModelService extends Disposable implements IBrainModelService {
 		if (!(uri.fsPath in this._modelRefOfURI)) await this.initializeModel(uri);
 		return this.getModel(uri);
 
+	};
+
+	getModelFSPaths = (): string[] => {
+		return Object.keys(this._modelRefOfURI);
 	};
 
 	override dispose() {

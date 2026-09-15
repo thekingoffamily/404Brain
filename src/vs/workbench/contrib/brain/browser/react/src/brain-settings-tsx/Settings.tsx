@@ -1496,8 +1496,8 @@ export const Settings = () => {
 									<h4 className={`text-brain-fg-3 mb-4`}>
 										<ChatMarkdownRender inPTag={true} string={`
 System instructions to include with all AI requests.
-Alternatively, place a \`.brainrules\` file in the root of your workspace.
-								`} chatMessageLocation={undefined} />
+Alternatively, place a \`.brainrules\` file in the root of your workspace, or add reusable skills as \`.md\` files inside a \`.brainskills\` folder in the root of your workspace.
+							`} chatMessageLocation={undefined} />
 									</h4>
 									<ErrorBoundary>
 										<AIInstructionsBox />

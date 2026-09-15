@@ -3,7 +3,7 @@
  *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
  *--------------------------------------------------------------------------------------*/
 
-import React, { ButtonHTMLAttributes, FormEvent, FormHTMLAttributes, Fragment, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { ButtonHTMLAttributes, ChangeEvent, ClipboardEvent, FormEvent, FormHTMLAttributes, Fragment, KeyboardEvent, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 
 
 import { useAccessor, useChatThreadsState, useChatThreadsStreamState, useSettingsState, useActiveURI, useCommandBarState, useFullChatThreadsStreamState } from '../util/services.js';
@@ -22,8 +22,8 @@ import { ChatMode, displayInfoOfProviderName, FeatureName, isFeatureNameDisabled
 import { ICommandService } from '../../../../../../../platform/commands/common/commands.js';
 import { WarningBox } from '../brain-settings-tsx/WarningBox.js';
 import { getModelCapabilities, getIsReasoningEnabledState } from '../../../../common/modelCapabilities.js';
-import { AlertTriangle, File, Ban, Check, ChevronRight, Dot, FileIcon, Pencil, Undo, Undo2, X, Flag, Copy as CopyIcon, Info, CirclePlus, Ellipsis, CircleEllipsis, Folder, ALargeSmall, TypeOutline, Text } from 'lucide-react';
-import { ChatMessage, CheckpointEntry, StagingSelectionItem, ToolMessage } from '../../../../common/chatThreadServiceTypes.js';
+import { AlertTriangle, File, Ban, Check, ChevronRight, Dot, FileIcon, Pencil, Undo, Undo2, X, Flag, Copy as CopyIcon, Info, CirclePlus, Ellipsis, CircleEllipsis, Folder, ALargeSmall, TypeOutline, Text, ImagePlus, Server, BookOpen, Plus } from 'lucide-react';
+import { BrainChatImage, ChatMessage, CheckpointEntry, StagingSelectionItem, ToolMessage } from '../../../../common/chatThreadServiceTypes.js';
 import { approvalTypeOfBuiltinToolName, BuiltinToolCallParams, BuiltinToolName, ToolName, LintErrorItem, ToolApprovalType, toolApprovalTypes } from '../../../../common/toolsServiceTypes.js';
 import { CopyButton, EditToolAcceptRejectButtonsHTML, IconShell1, JumpToFileButton, JumpToTerminalButton, StatusIndicator, StatusIndicatorForApplyButton, useApplyStreamState, useEditToolStreamState } from '../markdown/ApplyBlockHoverButtons.js';
 import { IsRunningType } from '../../../chatThreadService.js';
@@ -35,6 +35,7 @@ import { ToolApprovalTypeSwitch } from '../brain-settings-tsx/Settings.js';
 
 import { persistentTerminalNameOfId } from '../../../terminalToolService.js';
 import { removeMCPToolNamePrefix } from '../../../../common/mcpServiceTypes.js';
+import { VSBuffer } from '../../../../../../../base/common/buffer.js';
 
 
 
@@ -283,6 +284,185 @@ const ChatModeDropdown = ({ className }: { className: string }) => {
 		getOptionsEqual={(a, b) => a === b}
 	/>
 
+}
+
+// ---------- images (multimodal) ----------
+
+const MAX_IMG_DIM = 1280 // downscale so attached images don't blow up the thread storage
+const MAX_TOTAL_IMAGES = 4
+
+const readFileAsDataUrl = (file: File): Promise<string> => new Promise((resolve, reject) => {
+	const reader = new FileReader()
+	reader.onload = () => resolve(reader.result as string)
+	reader.onerror = () => reject(reader.error)
+	reader.readAsDataURL(file)
+})
+
+const downscaleDataUrl = (dataUrl: string, maxDim: number = MAX_IMG_DIM): Promise<string> => new Promise((resolve) => {
+	const img = new Image()
+	img.onload = () => {
+		const { width, height } = img
+		const scale = Math.min(1, maxDim / Math.max(width, height))
+		if (scale === 1) { resolve(dataUrl); return }
+		const canvas = document.createElement('canvas')
+		canvas.width = Math.max(1, Math.round(width * scale))
+		canvas.height = Math.max(1, Math.round(height * scale))
+		const ctx = canvas.getContext('2d')
+		if (!ctx) { resolve(dataUrl); return }
+		ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
+		const isPng = dataUrl.startsWith('data:image/png')
+		resolve(canvas.toDataURL(isPng ? 'image/png' : 'image/jpeg', 0.85))
+	}
+	img.onerror = () => resolve(dataUrl)
+	img.src = dataUrl
+})
+
+const StagingImages = ({ images, onRemove }: { images?: BrainChatImage[] | null, onRemove?: (idx: number) => void }) => {
+	if (!images?.length) return null
+	return <div className='flex flex-wrap gap-2 pb-1'>
+		{images.map((img, i) => (
+			<div key={i} className='relative group'>
+				<img
+					src={img.dataUrl}
+					alt={img.name ?? ''}
+					className='w-16 h-16 object-cover rounded border border-brain-border-3 bg-brain-bg-1'
+				/>
+				{onRemove && (
+					<button
+						type='button'
+						className='absolute -top-1.5 -right-1.5 rounded-full bg-brain-bg-2-alt border border-brain-border-3 cursor-pointer flex items-center justify-center hover:brightness-95'
+						onClick={(e) => { e.stopPropagation(); onRemove(i) }}
+					>
+						<X size={12} className='text-brain-fg-3' />
+					</button>
+				)}
+			</div>
+		))}
+	</div>
+}
+
+const AttachImagesButton = ({ onAttach }: { onAttach: () => void }) => (
+	<button
+		type='button'
+		title='Attach image (Ctrl+V to paste)'
+		className='flex-shrink-0 flex-grow-0 rounded cursor-pointer flex items-center justify-center text-brain-fg-3 hover:text-brain-fg-1 px-1 pb-1'
+		onClick={(e) => { e.stopPropagation(); onAttach() }}
+	>
+		<ImagePlus size={18} className='stroke-[1.5]' />
+	</button>
+)
+
+const BRAIN_RULES_TEMPLATE = `# Project rules
+
+Write your coding conventions, preferences, and rules for the AI here.
+404Brain will include this file in every AI request.
+
+Example:
+- Use TypeScript strict mode everywhere
+- Follow existing naming conventions in the codebase
+- Prefer small, focused functions
+`;
+
+const BRAIN_SKILL_TEMPLATE = (name: string) => `# ${name}
+
+Describe what this skill does, when to use it, and how to execute it.
+Every .md file inside the .brainskills folder is loaded as a "skill" and
+included in the system message of every AI request.
+
+## When to use
+
+- 
+
+## Steps
+
+1. 
+2. 
+
+## Rules
+
+- 
+`;
+
+const AddStuffMenu = ({ onAttachImage }: { onAttachImage: () => void }) => {
+	const accessor = useAccessor()
+	const fileService = accessor.get('IFileService')
+	const workspaceContextService = accessor.get('IWorkspaceContextService')
+	const mcpService = accessor.get('IMCPService')
+	const notificationService = accessor.get('INotificationService')
+
+	const [isOpen, setIsOpen] = useState(false)
+	const [menuPos, setMenuPos] = useState<{ top: number, left: number } | null>(null)
+
+	const workspaceRoot = workspaceContextService.getWorkspace().folders[0]?.uri
+
+	const createOrOpenFile = async (fileName: string, template: string) => {
+		setIsOpen(false)
+		if (!workspaceRoot) {
+			notificationService.warn('Open a folder first, then try again.')
+			return
+		}
+		const uri = URI.joinPath(workspaceRoot, fileName)
+		try {
+			const exists = await fileService.exists(uri)
+			if (!exists) {
+				await fileService.createFile(uri, template ? VSBuffer.fromString(template) : undefined)
+				const brainModelService = accessor.get('IBrainModelService')
+				await brainModelService.initializeModel(uri)
+			}
+		} catch (e) {
+			console.warn('Failed to create file', fileName, e)
+		}
+		brainOpenFileFn(uri, accessor)
+	}
+
+	const closeMenu = () => { setIsOpen(false); setMenuPos(null) }
+
+	const menuItemClass = 'flex items-center gap-2 w-full px-3 py-1.5 text-sm text-left text-brain-fg-1 hover:bg-brain-bg-1 cursor-pointer rounded'
+
+	return (
+		<div className='flex-shrink-0 flex-grow-0'>
+			<button
+				type='button'
+				title='Add MCP server, rules, skills...'
+				className='rounded cursor-pointer flex items-center justify-center text-brain-fg-3 hover:text-brain-fg-1 px-1 pb-1'
+				onClick={(e) => {
+					e.stopPropagation()
+					if (isOpen) { closeMenu(); return }
+					const rect = e.currentTarget.getBoundingClientRect()
+					setMenuPos({ top: rect.top - 4, left: rect.right })
+					setIsOpen(true)
+				}}
+			>
+				<CirclePlus size={18} className='stroke-[1.5]' />
+			</button>
+
+			{isOpen && menuPos && <>
+				{/* click-outside backdrop */}
+				<div
+					className='fixed inset-0 z-40'
+					onClick={(e) => { e.stopPropagation(); closeMenu() }}
+				/>
+				<div className='fixed z-50 min-w-56 py-1 px-1 rounded-md border border-brain-border-3 bg-brain-bg-2-alt shadow-lg' style={{ top: menuPos.top, left: menuPos.left, transform: 'translate(0px, -100%)' }}>
+					<button type='button' className={menuItemClass} onClick={(e) => { e.stopPropagation(); onAttachImage(); closeMenu() }}>
+						<ImagePlus size={15} className='stroke-[1.5] text-brain-fg-3' />
+						Attach image
+					</button>
+					<button type='button' className={menuItemClass} onClick={(e) => { e.stopPropagation(); closeMenu(); mcpService.revealMCPConfigFile() }}>
+						<Server size={15} className='stroke-[1.5] text-brain-fg-3' />
+						Add MCP server
+					</button>
+					<button type='button' className={menuItemClass} onClick={(e) => { e.stopPropagation(); createOrOpenFile('.brainrules', BRAIN_RULES_TEMPLATE) }}>
+						<File size={15} className='stroke-[1.5] text-brain-fg-3' />
+						Create .brainrules
+					</button>
+					<button type='button' className={menuItemClass} onClick={(e) => { e.stopPropagation(); createOrOpenFile('.brainskills/example.md', BRAIN_SKILL_TEMPLATE('example')) }}>
+						<BookOpen size={15} className='stroke-[1.5] text-brain-fg-3' />
+						Create a skill
+					</button>
+				</div>
+			</>}
+		</div>
+	)
 }
 
 
@@ -1088,6 +1268,7 @@ const UserMessageComponent = ({ chatMessage, messageIdx, isCheckpointGhost, curr
 	let chatbubbleContents: React.ReactNode
 	if (mode === 'display') {
 		chatbubbleContents = <>
+			{chatMessage.images?.length ? <StagingImages images={chatMessage.images} /> : null}
 			<SelectedFiles type='past' messageIdx={messageIdx} selections={chatMessage.selections || []} />
 			<span className='px-0.5'>{chatMessage.displayContent}</span>
 		</>
@@ -2917,6 +3098,46 @@ export const SidebarChat = () => {
 
 	const sidebarRef = useRef<HTMLDivElement>(null)
 	const scrollContainerRef = useRef<HTMLDivElement | null>(null)
+	const fileInputRef = useRef<HTMLInputElement | null>(null)
+	const [stagingImages, setStagingImages] = useState<BrainChatImage[]>([])
+
+	const addImagesFromFiles = useCallback(async (files: File[] | FileList) => {
+		const imgFiles = Array.from(files).filter(f => f.type.startsWith('image/'))
+		if (!imgFiles.length) return
+		const space = MAX_TOTAL_IMAGES - stagingImages.length
+		if (space <= 0) return
+		const newImages: BrainChatImage[] = []
+		for (const file of imgFiles.slice(0, space)) {
+			try {
+				const dataUrl = await downscaleDataUrl(await readFileAsDataUrl(file))
+				newImages.push({ dataUrl, name: file.name })
+			} catch (e) { /* skip unreadable files */ }
+		}
+		if (newImages.length) setStagingImages(prev => [...prev, ...newImages].slice(0, MAX_TOTAL_IMAGES))
+	}, [stagingImages.length])
+
+	const onPasteText = useCallback((e: ClipboardEvent<HTMLTextAreaElement>) => {
+		const items = e.clipboardData?.items
+		if (!items) return
+		const imageFiles: File[] = []
+		for (let i = 0; i < items.length; i += 1) {
+			const item = items[i]
+			if (item.type.startsWith('image/')) {
+				const file = item.getAsFile()
+				if (file) imageFiles.push(file)
+			}
+		}
+		if (imageFiles.length) {
+			e.preventDefault()
+			addImagesFromFiles(imageFiles)
+		}
+	}, [addImagesFromFiles])
+
+	const onFileInputChange = useCallback((e: ChangeEvent<HTMLInputElement>) => {
+		if (e.target.files?.length) addImagesFromFiles(e.target.files)
+		e.target.value = '' // allow re-selecting the same file
+	}, [addImagesFromFiles])
+
 	const onSubmit = useCallback(async (_forceSubmit?: string) => {
 
 		if (isDisabled && !_forceSubmit) return
@@ -2926,18 +3147,20 @@ export const SidebarChat = () => {
 
 		// send message to LLM
 		const userMessage = _forceSubmit || textAreaRef.current?.value || ''
+		const userImages = stagingImages.length ? stagingImages : undefined
 
 		try {
-			await chatThreadsService.addUserMessageAndStreamResponse({ userMessage, threadId })
+			await chatThreadsService.addUserMessageAndStreamResponse({ userMessage, images: userImages, threadId })
 		} catch (e) {
 			console.error('Error while sending message in chat:', e)
 		}
 
 		setSelections([]) // clear staging
+		setStagingImages([])
 		textAreaFnsRef.current?.setValue('')
 		textAreaRef.current?.focus() // focus input after submit
 
-	}, [chatThreadsService, isDisabled, isRunning, textAreaRef, textAreaFnsRef, setSelections, settingsState])
+	}, [chatThreadsService, isDisabled, isRunning, stagingImages, textAreaRef, textAreaFnsRef, setSelections, settingsState])
 
 	const onAbort = async () => {
 		const threadId = currentThread.id
@@ -2983,7 +3206,7 @@ export const SidebarChat = () => {
 	}, [previousMessages, threadId, currCheckpointIdx, isRunning])
 
 	const streamingChatIdx = previousMessagesHTML.length
-	const currStreamingMessageHTML = reasoningSoFar || displayContentSoFar || isRunning ?
+	const currStreamingMessageHTML = reasoningSoFar || displayContentSoFar || isRunning === 'LLM' ?
 		<ChatBubble
 			key={'curr-streaming-msg'}
 			currCheckpointIdx={currCheckpointIdx}
@@ -3031,7 +3254,7 @@ export const SidebarChat = () => {
 		{generatingTool}
 
 		{/* loading indicator */}
-		{isRunning === 'LLM' || isRunning === 'idle' && !toolIsGenerating ? <ProseWrapper>
+		{isRunning === 'LLM' || (isRunning === 'idle' && !toolIsGenerating) || isRunning === 'tool' ? <ProseWrapper>
 			{<IconLoading className='opacity-50 text-sm' />}
 		</ProseWrapper> : null}
 
@@ -3075,17 +3298,33 @@ export const SidebarChat = () => {
 		setSelections={setSelections}
 		onClickAnywhere={() => { textAreaRef.current?.focus() }}
 	>
-		<BrainInputBox2
-			enableAtToMention
-			className={`min-h-[81px] px-0.5 py-0.5`}
-			placeholder={`@ to mention, ${keybindingString ? `${keybindingString} to add a selection. ` : ''}Enter instructions...`}
-			onChangeText={onChangeText}
-			onKeyDown={onKeyDown}
-			onFocus={() => { chatThreadsService.setCurrentlyFocusedMessageIdx(undefined) }}
-			ref={textAreaRef}
-			fnsRef={textAreaFnsRef}
-			multiline={true}
-		/>
+		<StagingImages images={stagingImages} onRemove={(i) => setStagingImages(prev => prev.filter((_, idx) => idx !== i))} />
+		<div className='flex items-end gap-1 w-full'>
+			<div className='flex-1 min-w-0'>
+				<BrainInputBox2
+					enableAtToMention
+					className={`min-h-[81px] px-0.5 py-0.5`}
+					placeholder={`@ to mention, ${keybindingString ? `${keybindingString} to add a selection. ` : ''}Enter instructions...`}
+					onChangeText={onChangeText}
+					onKeyDown={onKeyDown}
+					onPasteText={onPasteText}
+					onFocus={() => { chatThreadsService.setCurrentlyFocusedMessageIdx(undefined) }}
+					ref={textAreaRef}
+					fnsRef={textAreaFnsRef}
+					multiline={true}
+				/>
+			</div>
+			<AddStuffMenu onAttachImage={() => fileInputRef.current?.click()} />
+			<AttachImagesButton onAttach={() => fileInputRef.current?.click()} />
+			<input
+				ref={fileInputRef}
+				type='file'
+				accept='image/*'
+				multiple
+				className='hidden'
+				onChange={onFileInputChange}
+			/>
+		</div>
 
 	</BrainChatArea>
 

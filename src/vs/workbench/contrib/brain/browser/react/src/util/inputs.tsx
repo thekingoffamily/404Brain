@@ -350,11 +350,12 @@ type InputBox2Props = {
 	className?: string;
 	onChangeText?: (value: string) => void;
 	onKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+	onPasteText?: (e: React.ClipboardEvent<HTMLTextAreaElement>) => void;
 	onFocus?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
 	onBlur?: (e: React.FocusEvent<HTMLTextAreaElement>) => void;
 	onChangeHeight?: (newHeight: number) => void;
 }
-export const BrainInputBox2 = forwardRef<HTMLTextAreaElement, InputBox2Props>(function X({ initValue, placeholder, multiline, enableAtToMention, fnsRef, className, onKeyDown, onFocus, onBlur, onChangeText }, ref) {
+export const BrainInputBox2 = forwardRef<HTMLTextAreaElement, InputBox2Props>(function X({ initValue, placeholder, multiline, enableAtToMention, fnsRef, className, onKeyDown, onPasteText, onFocus, onBlur, onChangeText }, ref) {
 
 
 	// mirrors whatever is in ref
@@ -750,6 +751,8 @@ export const BrainInputBox2 = forwardRef<HTMLTextAreaElement, InputBox2Props>(fu
 
 			onFocus={onFocus}
 			onBlur={onBlur}
+
+			onPaste={onPasteText}
 
 			disabled={!isEnabled}
 

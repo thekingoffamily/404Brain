@@ -1,5 +1,9 @@
 # 404Brain Codebase Guide
 
+> **Стартуй с `AGENTS.md`** — это единственная точка входа для агентов: правила работы,
+> сборка (buildreact/compile), карта файлов, история сессий и запрет на утечку ключей.
+> Этот гайд — детальное объяснение архитектуры кода Brain.
+
 The 404Brain codebase is not as intimidating as it seems!
 
 Most of the AI / agent code lives in `src/vs/workbench/contrib/brain/`.

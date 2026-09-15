@@ -6,6 +6,7 @@
 import { Disposable } from '../../../../base/common/lifecycle.js';
 import { URI } from '../../../../base/common/uri.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
+import { IFileService } from '../../../../platform/files/common/files.js';
 import { IWorkbenchContribution, registerWorkbenchContribution2, WorkbenchPhase } from '../../../common/contributions.js';
 import { IBrainModelService } from '../common/brainModelService.js';
 
@@ -16,13 +17,27 @@ class ConvertContribWorkbenchContribution extends Disposable implements IWorkben
 	constructor(
 		@IBrainModelService private readonly brainModelService: IBrainModelService,
 		@IWorkspaceContextService private readonly workspaceContext: IWorkspaceContextService,
+		@IFileService private readonly fileService: IFileService,
 	) {
 		super()
 
-		const initializeURI = (uri: URI) => {
+		const initializeURI = async (uri: URI) => {
 			this.workspaceContext.getWorkspace()
 			const brainRulesURI = URI.joinPath(uri, '.brainrules')
 			this.brainModelService.initializeModel(brainRulesURI)
+
+			// initialize all .md files in .brainskills folder as well
+			const brainSkillsFolderURI = URI.joinPath(uri, '.brainskills')
+			try {
+				const folderStat = await this.fileService.resolve(brainSkillsFolderURI)
+				for (const child of folderStat.children ?? []) {
+					if (child.isFile && child.name.endsWith('.md')) {
+						this.brainModelService.initializeModel(child.resource)
+					}
+				}
+			} catch (e) {
+				// .brainskills folder doesn't exist yet, that's fine
+			}
 		}
 
 		// call

@@ -32,63 +32,6 @@ function isValidUri(s: string): boolean {
 	return s.length > 5 && isAbsolute(s) && !s.includes('//') && !s.includes('/*') // common case that is a false positive is comments like //
 }
 
-// renders contiguous string of latex eg $e^{i\pi}$
-const LatexRender = ({ latex }: { latex: string }) => {
-	return <span className="katex-error text-red-500">{latex}</span>
-	// try {
-	// 	let formula = latex;
-	// 	let displayMode = false;
-
-	// 	// Extract the formula from delimiters
-	// 	if (latex.startsWith('$') && latex.endsWith('$')) {
-	// 		// Check if it's display math $$...$$
-	// 		if (latex.startsWith('$$') && latex.endsWith('$$')) {
-	// 			formula = latex.slice(2, -2);
-	// 			displayMode = true;
-	// 		} else {
-	// 			formula = latex.slice(1, -1);
-	// 		}
-	// 	} else if (latex.startsWith('\\(') && latex.endsWith('\\)')) {
-	// 		formula = latex.slice(2, -2);
-	// 	} else if (latex.startsWith('\\[') && latex.endsWith('\\]')) {
-	// 		formula = latex.slice(2, -2);
-	// 		displayMode = true;
-	// 	}
-
-	// 	// Render LaTeX
-	// 	const html = katex.renderToString(formula, {
-	// 		displayMode: displayMode,
-	// 		throwOnError: false,
-	// 		output: 'html'
-	// 	});
-
-	// 	// Sanitize the HTML output with DOMPurify
-	// 	const sanitizedHtml = dompurify.sanitize(html, {
-	// 		RETURN_TRUSTED_TYPE: true,
-	// 		USE_PROFILES: { html: true, svg: true, mathMl: true }
-	// 	});
-
-	// 	// Add proper styling based on mode
-	// 	const className = displayMode
-	// 		? 'katex-block my-2 text-center'
-	// 		: 'katex-inline';
-
-	// 	// Use the ref approach to avoid dangerouslySetInnerHTML
-	// 	const mathRef = React.useRef<HTMLSpanElement>(null);
-
-	// 	React.useEffect(() => {
-	// 		if (mathRef.current) {
-	// 			mathRef.current.innerHTML = sanitizedHtml as unknown as string;
-	// 		}
-	// 	}, [sanitizedHtml]);
-
-	// 	return <span ref={mathRef} className={className}></span>;
-	// } catch (error) {
-	// 	console.error('KaTeX rendering error:', error);
-	// 	return <span className="katex-error text-red-500">{latex}</span>;
-	// }
-}
-
 const Codespan = ({ text, className, onClick, tooltip }: { text: string, className?: string, onClick?: () => void, tooltip?: string }) => {
 
 	// TODO compute this once for efficiency. we should use `labels.ts/shorten` to display duplicates properly
@@ -166,102 +109,20 @@ const CodespanWithLink = ({ text, rawText, chatMessageLocation }: { text: string
 }
 
 
-const paragraphToLatexSegments = (paragraphText: string) => {
-
-	const segments: React.ReactNode[] = [];
-
-	if (paragraphText
-		&& !(paragraphText.includes('#') || paragraphText.includes('`')) // don't process latex if a codespan or header tag
-		&& !/^[\w\s.()[\]{}]+$/.test(paragraphText) // don't process latex if string only contains alphanumeric chars, whitespace, periods, and brackets
-	) {
-		const rawText = paragraphText;
-		// Regular expressions to match LaTeX delimiters
-		const displayMathRegex = /\$\$(.*?)\$\$/g;  // Display math: $$...$$
-		const inlineMathRegex = /\$((?!\$).*?)\$/g; // Inline math: $...$ (but not $$)
-
-		// Check if the paragraph contains any LaTeX expressions
-		if (displayMathRegex.test(rawText) || inlineMathRegex.test(rawText)) {
-			// Reset the regex state (since we used .test earlier)
-			displayMathRegex.lastIndex = 0;
-			inlineMathRegex.lastIndex = 0;
-
-			// Parse the text into segments of regular text and LaTeX
-			let lastIndex = 0;
-			let segmentId = 0;
-
-			// First replace display math ($$...$$)
-			let match;
-			while ((match = displayMathRegex.exec(rawText)) !== null) {
-				const [fullMatch, formula] = match;
-				const matchIndex = match.index;
-
-				// Add text before the LaTeX expression
-				if (matchIndex > lastIndex) {
-					const textBefore = rawText.substring(lastIndex, matchIndex);
-					segments.push(
-						<span key={`text-${segmentId++}`}>
-							{textBefore}
-						</span>
-					);
-				}
-
-				// Add the LaTeX expression
-				segments.push(
-					<LatexRender key={`latex-${segmentId++}`} latex={fullMatch} />
-				);
-
-				lastIndex = matchIndex + fullMatch.length;
-			}
-
-			// Add any remaining text (which might contain inline math)
-			if (lastIndex < rawText.length) {
-				const remainingText = rawText.substring(lastIndex);
-
-				// Process inline math in the remaining text
-				lastIndex = 0;
-				inlineMathRegex.lastIndex = 0;
-				const inlineSegments: React.ReactNode[] = [];
-
-				while ((match = inlineMathRegex.exec(remainingText)) !== null) {
-					const [fullMatch] = match;
-					const matchIndex = match.index;
-
-					// Add text before the inline LaTeX
-					if (matchIndex > lastIndex) {
-						const textBefore = remainingText.substring(lastIndex, matchIndex);
-						inlineSegments.push(
-							<span key={`inline-text-${segmentId++}`}>
-								{textBefore}
-							</span>
-						);
-					}
-
-					// Add the inline LaTeX
-					inlineSegments.push(
-						<LatexRender key={`inline-latex-${segmentId++}`} latex={fullMatch} />
-					);
-
-					lastIndex = matchIndex + fullMatch.length;
-				}
-
-				// Add any remaining text after all inline math
-				if (lastIndex < remainingText.length) {
-					inlineSegments.push(
-						<span key={`inline-final-${segmentId++}`}>
-							{remainingText.substring(lastIndex)}
-						</span>
-					);
-				}
-
-				segments.push(...inlineSegments);
-			}
-
-
-		}
-	}
-
-
-	return segments
+const InlineTokens = ({ tokens, tokenIdx, chatMessageLocation, inPTag, codeURI, ...options }: { tokens: Token[], tokenIdx: string, chatMessageLocation?: ChatMessageLocation, inPTag?: boolean, codeURI?: URI } & RenderTokenOptions) => {
+	return <>
+		{tokens.map((token, index) => (
+			<RenderToken
+				key={index}
+				token={token}
+				tokenIdx={`${tokenIdx}-${index}`}
+				chatMessageLocation={chatMessageLocation}
+				inPTag={inPTag}
+				codeURI={codeURI}
+				{...options}
+			/>
+		))}
+	</>
 }
 
 
@@ -414,7 +275,9 @@ const RenderToken = ({ token, inPTag, codeURI, chatMessageLocation, tokenIdx, ..
 	}
 
 	if (t.type === 'blockquote') {
-		return <blockquote>{t.text}</blockquote>
+		return <blockquote>
+			{t.tokens?.length ? <InlineTokens tokens={t.tokens} tokenIdx={tokenIdx} chatMessageLocation={chatMessageLocation} inPTag={true} codeURI={codeURI} {...options} /> : t.text}
+		</blockquote>
 	}
 
 	if (t.type === 'list_item') {
@@ -446,17 +309,6 @@ const RenderToken = ({ token, inPTag, codeURI, chatMessageLocation, tokenIdx, ..
 	}
 
 	if (t.type === 'paragraph') {
-
-		// check for latex
-		const latexSegments = paragraphToLatexSegments(t.raw)
-		if (latexSegments.length !== 0) {
-			if (inPTag) {
-				return <span className='block'>{latexSegments}</span>;
-			}
-			return <p>{latexSegments}</p>;
-		}
-
-		// if no latex, default behavior
 		const contents = <>
 			{t.tokens.map((token, index) => (
 				<RenderToken key={index}
@@ -473,8 +325,18 @@ const RenderToken = ({ token, inPTag, codeURI, chatMessageLocation, tokenIdx, ..
 		return <p>{contents}</p>
 	}
 
-	if (t.type === 'text' || t.type === 'escape' || t.type === 'html') {
-		return <span>{t.raw}</span>
+	if (t.type === 'text' || t.type === 'html') {
+		// render nested tokens when present so raw markdown markers are never shown
+		if (t.tokens?.length && t.type === 'text') {
+			return <span className='block'>
+				<InlineTokens tokens={t.tokens} tokenIdx={tokenIdx} chatMessageLocation={chatMessageLocation} inPTag={true} codeURI={codeURI} {...options} />
+			</span>
+		}
+		return <span>{t.text}</span>
+	}
+
+	if (t.type === 'escape') {
+		return <span>{t.text}</span>
 	}
 
 	if (t.type === 'def') {
@@ -489,7 +351,7 @@ const RenderToken = ({ token, inPTag, codeURI, chatMessageLocation, tokenIdx, ..
 				title={t.title ?? undefined}
 				className='underline cursor-pointer hover:brightness-90 transition-all duration-200 text-brain-fg-2'
 			>
-				{t.text}
+				{t.tokens?.length ? <InlineTokens tokens={t.tokens} tokenIdx={tokenIdx} chatMessageLocation={chatMessageLocation} inPTag={true} codeURI={codeURI} {...options} /> : t.text}
 			</a>
 		)
 	}
@@ -504,11 +366,15 @@ const RenderToken = ({ token, inPTag, codeURI, chatMessageLocation, tokenIdx, ..
 	}
 
 	if (t.type === 'strong') {
-		return <strong>{t.text}</strong>
+		return <strong>
+			{t.tokens?.length ? <InlineTokens tokens={t.tokens} tokenIdx={tokenIdx} chatMessageLocation={chatMessageLocation} inPTag={true} codeURI={codeURI} {...options} /> : t.text}
+		</strong>
 	}
 
 	if (t.type === 'em') {
-		return <em>{t.text}</em>
+		return <em>
+			{t.tokens?.length ? <InlineTokens tokens={t.tokens} tokenIdx={tokenIdx} chatMessageLocation={chatMessageLocation} inPTag={true} codeURI={codeURI} {...options} /> : t.text}
+		</em>
 	}
 
 	// inline code
@@ -532,7 +398,9 @@ const RenderToken = ({ token, inPTag, codeURI, chatMessageLocation, tokenIdx, ..
 
 	// strikethrough
 	if (t.type === 'del') {
-		return <del>{t.text}</del>
+		return <del>
+			{t.tokens?.length ? <InlineTokens tokens={t.tokens} tokenIdx={tokenIdx} chatMessageLocation={chatMessageLocation} inPTag={true} codeURI={codeURI} {...options} /> : t.text}
+		</del>
 	}
 	// default
 	return (

@@ -20,7 +20,7 @@ import { approvalTypeOfBuiltinToolName, BuiltinToolCallParams, ToolCallParams, T
 import { IToolsService } from './toolsService.js';
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
-import { ChatMessage, CheckpointEntry, CodespanLocationLink, StagingSelectionItem, ToolMessage } from '../common/chatThreadServiceTypes.js';
+import { BrainChatImage, ChatMessage, CheckpointEntry, CodespanLocationLink, StagingSelectionItem, ToolMessage } from '../common/chatThreadServiceTypes.js';
 import { Position } from '../../../../editor/common/core/position.js';
 import { IMetricsService } from '../common/metricsService.js';
 import { shorten } from '../../../../base/common/labels.js';
@@ -280,7 +280,7 @@ export interface IChatThreadService {
 	editUserMessageAndStreamResponse({ userMessage, messageIdx, threadId }: { userMessage: string, messageIdx: number, threadId: string }): Promise<void>;
 
 	// call to add a message
-	addUserMessageAndStreamResponse({ userMessage, threadId }: { userMessage: string, threadId: string }): Promise<void>;
+	addUserMessageAndStreamResponse({ userMessage, images, threadId }: { userMessage: string, images?: BrainChatImage[] | null, threadId: string }): Promise<void>;
 
 	// approve/reject
 	approveLatestToolRequest(threadId: string): void;
@@ -502,12 +502,17 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 	private _swapOutLatestStreamingToolWithResult = (threadId: string, tool: ChatMessage & { role: 'tool' }) => {
 		const messages = this.state.allThreads[threadId]?.messages
 		if (!messages) return false
-		const lastMsg = messages[messages.length - 1]
-		if (!lastMsg) return false
 
-		if (lastMsg.role === 'tool' && lastMsg.type !== 'invalid_params') {
-			this._editMessageInThread(threadId, messages.length - 1, tool)
-			return true
+		// find the LAST tool message (skipping checkpoints) - that's the placeholder for the tool currently running.
+		// replacing it in place keeps the history in exact execution order (assistant -> tool result -> next assistant)
+		for (let i = messages.length - 1; i >= 0; i -= 1) {
+			const m = messages[i]
+			if (m.role === 'checkpoint') continue
+			if (m.role === 'tool' && m.type !== 'invalid_params') {
+				this._editMessageInThread(threadId, i, tool)
+				return true
+			}
+			break // stop at the first non-tool, non-checkpoint message from the end
 		}
 		return false
 	}
@@ -660,10 +665,13 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 
 
 
-		// 3. call the tool
+		// 3. call the tool.
+		// NOTE: we only swap a placeholder that ALREADY exists (eg the tool_request tile) for the running_now tile.
+		// we deliberately do NOT insert a "running" placeholder into the chat before the tool actually executes:
+		// the tool message goes into the chat once execution completes, keeping history in exact execution order.
 		// this._setStreamState(threadId, { isRunning: 'tool' }, 'merge')
 		const runningTool = { role: 'tool', type: 'running_now', name: toolName, params: toolParams, content: '(value not received yet...)', result: null, id: toolId, rawParams: opts.unvalidatedToolParams, mcpServerName } as const
-		this._updateLatestTool(threadId, runningTool)
+		this._swapOutLatestStreamingToolWithResult(threadId, runningTool)
 
 
 		let interrupted = false
@@ -1231,7 +1239,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 	}
 
 
-	private async _addUserMessageAndStreamResponse({ userMessage, _chatSelections, threadId }: { userMessage: string, _chatSelections?: StagingSelectionItem[], threadId: string }) {
+	private async _addUserMessageAndStreamResponse({ userMessage, _chatSelections, images, threadId }: { userMessage: string, _chatSelections?: StagingSelectionItem[], images?: BrainChatImage[] | null, threadId: string }) {
 		const thread = this.state.allThreads[threadId]
 		if (!thread) return // should never happen
 
@@ -1251,7 +1259,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 		const currSelns: StagingSelectionItem[] = _chatSelections ?? thread.state.stagingSelections
 
 		const userMessageContent = await chat_userMessageContent(instructions, currSelns, { directoryStrService: this._directoryStringService, fileService: this._fileService }) // user message + names of files (NOT content)
-		const userHistoryElt: ChatMessage = { role: 'user', content: userMessageContent, displayContent: instructions, selections: currSelns, state: defaultMessageState }
+		const userHistoryElt: ChatMessage = { role: 'user', content: userMessageContent, displayContent: instructions, selections: currSelns, images: images ?? null, state: defaultMessageState }
 		this._addMessageToThread(threadId, userHistoryElt)
 
 		this._setThreadState(threadId, { currCheckpointIdx: null }) // no longer at a checkpoint because started streaming
@@ -1268,7 +1276,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 	}
 
 
-	async addUserMessageAndStreamResponse({ userMessage, _chatSelections, threadId }: { userMessage: string, _chatSelections?: StagingSelectionItem[], threadId: string }) {
+	async addUserMessageAndStreamResponse({ userMessage, images, _chatSelections, threadId }: { userMessage: string, images?: BrainChatImage[] | null, _chatSelections?: StagingSelectionItem[], threadId: string }) {
 		const thread = this.state.allThreads[threadId];
 		if (!thread) return
 
@@ -1291,7 +1299,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 		}
 
 		// Now call the original method to add the user message and stream the response
-		await this._addUserMessageAndStreamResponse({ userMessage, _chatSelections, threadId });
+		await this._addUserMessageAndStreamResponse({ userMessage, images, _chatSelections, threadId });
 
 	}
 
@@ -1306,6 +1314,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 
 		// get prev and curr selections before clearing the message
 		const currSelns = thread.messages[messageIdx].state.stagingSelections || [] // staging selections for the edited message
+		const prevImages = thread.messages[messageIdx].images ?? null // keep the attached images when editing
 
 		// clear messages up to the index
 		const slicedMessages = thread.messages.slice(0, messageIdx)
@@ -1320,7 +1329,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 		})
 
 		// re-add the message and stream it
-		this._addUserMessageAndStreamResponse({ userMessage, _chatSelections: currSelns, threadId })
+		this._addUserMessageAndStreamResponse({ userMessage, _chatSelections: currSelns, images: prevImages, threadId })
 	}
 
 	// ---------- the rest ----------

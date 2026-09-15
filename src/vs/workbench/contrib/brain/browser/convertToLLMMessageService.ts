@@ -5,10 +5,10 @@ import { registerSingleton, InstantiationType } from '../../../../platform/insta
 import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { IWorkspaceContextService } from '../../../../platform/workspace/common/workspace.js';
 import { IEditorService } from '../../../services/editor/common/editorService.js';
-import { ChatMessage } from '../common/chatThreadServiceTypes.js';
+import { BrainChatImage, ChatMessage } from '../common/chatThreadServiceTypes.js';
 import { getIsReasoningEnabledState, getReservedOutputTokenSpace, getModelCapabilities } from '../common/modelCapabilities.js';
 import { reParsedToolXMLString, chat_systemMessage } from '../common/prompt/prompts.js';
-import { AnthropicLLMChatMessage, AnthropicReasoning, GeminiLLMChatMessage, LLMChatMessage, LLMFIMMessage, OpenAILLMChatMessage, RawToolParamsObj } from '../common/sendLLMMessageTypes.js';
+import { AnthropicImagePart, AnthropicImageSource, AnthropicLLMChatMessage, AnthropicReasoning, GeminiLLMChatMessage, LLMChatMessage, LLMFIMMessage, OpenAILLMChatMessage, OpenAIUserContentPart, RawToolParamsObj } from '../common/sendLLMMessageTypes.js';
 import { IBrainSettingsService } from '../common/brainSettingsService.js';
 import { ChatMode, FeatureName, ModelSelection, ProviderName } from '../common/brainSettingsTypes.js';
 import { IDirectoryStrService } from '../common/directoryStrService.js';
@@ -32,10 +32,42 @@ type SimpleLLMMessage = {
 } | {
 	role: 'user';
 	content: string;
+	images?: BrainChatImage[];
 } | {
 	role: 'assistant';
 	content: string;
 	anthropicReasoning: AnthropicReasoning[] | null;
+}
+
+
+
+// ---------- images (multimodal) ----------
+
+const parseDataUrl = (dataUrl: string): { mediaType: string, data: string } => {
+	const commaIdx = dataUrl.indexOf(',')
+	const head = commaIdx >= 0 ? dataUrl.slice(0, commaIdx) : ''
+	const data = commaIdx >= 0 ? dataUrl.slice(commaIdx + 1) : dataUrl
+	const mediaType = head.match(/^data:([^;]+)/)?.[1] ?? 'image/png'
+	return { mediaType, data }
+}
+
+const openAIImageParts = (images: BrainChatImage[]) =>
+	images.map(img => ({ type: 'image_url' as const, image_url: { url: img.dataUrl } }))
+
+const anthropicImageParts = (images: BrainChatImage[]): AnthropicImagePart[] =>
+	images.map(img => {
+		const { mediaType: rawMediaType, data } = parseDataUrl(img.dataUrl)
+		const mediaType: AnthropicImageSource['media_type'] = ['image/png', 'image/jpeg', 'image/gif', 'image/webp'].includes(rawMediaType)
+			? rawMediaType as AnthropicImageSource['media_type']
+			: 'image/png'
+		return { type: 'image' as const, source: { type: 'base64' as const, media_type: mediaType, data } }
+	})
+
+// merge two user-message contents (string or parts array) into a single parts array without losing images
+const mergeContent = (prev: AnthropicOrOpenAILLMMessage['content'], next: AnthropicOrOpenAILLMMessage['content']): AnthropicOrOpenAILLMMessage['content'] => {
+	const prevArr = (typeof prev === 'string' ? [{ type: 'text', text: prev }] : prev) as OpenAIUserContentPart[]
+	const nextArr = (typeof next === 'string' ? [{ type: 'text', text: next }] : next) as OpenAIUserContentPart[]
+	return [...prevArr, ...nextArr]
 }
 
 
@@ -77,7 +109,16 @@ const prepareMessages_openai_tools = (messages: SimpleLLMMessage[]): AnthropicOr
 		const currMsg = messages[i]
 
 		if (currMsg.role !== 'tool') {
-			newMessages.push(currMsg)
+			// if the user attached images, turn the content into a parts array (multimodal)
+			if (currMsg.role === 'user' && currMsg.images?.length) {
+				newMessages.push({
+					role: 'user',
+					content: [{ type: 'text', text: currMsg.content }, ...openAIImageParts(currMsg.images)],
+				})
+			}
+			else {
+				newMessages.push(currMsg)
+			}
 			continue
 		}
 
@@ -164,9 +205,18 @@ const prepareMessages_anthropic_tools = (messages: SimpleLLMMessage[], supportsA
 		}
 
 		if (currMsg.role === 'user') {
-			newMessages[i] = {
-				role: 'user',
-				content: currMsg.content,
+			// if the user attached images, turn the content into a parts array (multimodal)
+			if (currMsg.images?.length) {
+				newMessages[i] = {
+					role: 'user',
+					content: [{ type: 'text', text: currMsg.content }, ...anthropicImageParts(currMsg.images)],
+				}
+			}
+			else {
+				newMessages[i] = {
+					role: 'user',
+					content: currMsg.content,
+				}
 			}
 			continue
 		}
@@ -223,16 +273,27 @@ const prepareMessages_XML_tools = (messages: SimpleLLMMessage[], supportsAnthrop
 		}
 		// add user or tool to the previous user message
 		else if (c.role === 'user' || c.role === 'tool') {
-			if (c.role === 'tool')
-				c.content = `<${c.name}_result>\n${c.content}\n</${c.name}_result>`
+			const hasImages = c.role === 'user' && !!c.images?.length
+
+			// build the content: string normally, parts array when the user attached images
+			let content: AnthropicOrOpenAILLMMessage['content']
+			if (hasImages) {
+				content = [{ type: 'text', text: c.content }, ...openAIImageParts(c.images!)]
+			}
+			else if (c.role === 'tool') {
+				content = `<${c.name}_result>\n${c.content}\n</${c.name}_result>`
+			}
+			else {
+				content = c.content
+			}
 
 			if (llmChatMessages.length === 0 || llmChatMessages[llmChatMessages.length - 1].role !== 'user')
 				llmChatMessages.push({
 					role: 'user',
-					content: c.content
+					content
 				})
 			else
-				llmChatMessages[llmChatMessages.length - 1].content += '\n\n' + c.content
+				llmChatMessages[llmChatMessages.length - 1].content = mergeContent(llmChatMessages[llmChatMessages.length - 1].content, content)
 		}
 	}
 	return llmChatMessages
@@ -271,7 +332,7 @@ const prepareOpenAIOrAnthropicMessages = ({
 	// A COMPLETE HACK: last message is system message for context purposes
 
 	const sysMsgParts: string[] = []
-	if (aiInstructions) sysMsgParts.push(`GUIDELINES (from the user's .brainrules file):\n${aiInstructions}`)
+	if (aiInstructions) sysMsgParts.push(`GUIDELINES (from the user's .brainrules file and .brainskills folder):\n${aiInstructions}`)
 	if (systemMessage) sysMsgParts.push(systemMessage)
 	const combinedSystemMessage = sysMsgParts.join('\n\n')
 
@@ -474,6 +535,9 @@ const prepareGeminiMessages = (messages: AnthropicLLMChatMessage[]) => {
 					if (c.type === 'text') {
 						return { text: c.text }
 					}
+					else if (c.type === 'image') {
+						return { inlineData: { mimeType: c.source.media_type, data: c.source.data } }
+					}
 					else if (c.type === 'tool_result') {
 						if (!latestToolName) return null
 						return { functionResponse: { id: c.tool_use_id, name: latestToolName, response: { output: c.content } } }
@@ -563,14 +627,40 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		}
 	}
 
+	// Read .brainskills/*.md files from workspace folders
+	private _getBrainSkillsFileContents(): string {
+		try {
+			const workspaceFolders = this.workspaceContextService.getWorkspace().folders;
+			let brainSkills = '';
+			for (const folder of workspaceFolders) {
+				const skillsFolderPath = URI.joinPath(folder.uri, '.brainskills').fsPath;
+				const modelFSPaths = this.brainModelService.getModelFSPaths();
+				for (const fsPath of modelFSPaths) {
+					if (!fsPath.startsWith(skillsFolderPath)) continue
+					if (!fsPath.endsWith('.md')) continue
+					const { model } = this.brainModelService.getModelFromFsPath(fsPath)
+					if (!model) continue
+					const skillName = fsPath.replace(/[/\\]+/g, '/').split('/').filter(p => p.length).pop() ?? 'skill'
+					brainSkills += `# SKILL: ${skillName.replace(/\.md$/i, '')}\n${model.getValue(EndOfLinePreference.LF)}\n\n`;
+				}
+			}
+			return brainSkills.trim();
+		}
+		catch (e) {
+			return ''
+		}
+	}
+
 	// Get combined AI instructions from settings and .brainrules files
 	private _getCombinedAIInstructions(): string {
 		const globalAIInstructions = this.brainSettingsService.state.globalSettings.aiInstructions;
 		const brainRulesFileContent = this._getBrainRulesFileContents();
+		const brainSkillsFileContent = this._getBrainSkillsFileContents();
 
 		const ans: string[] = []
 		if (globalAIInstructions) ans.push(globalAIInstructions)
 		if (brainRulesFileContent) ans.push(brainRulesFileContent)
+		if (brainSkillsFileContent) ans.push(brainSkillsFileContent)
 		return ans.join('\n\n')
 	}
 
@@ -628,6 +718,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 				simpleLLMMessages.push({
 					role: m.role,
 					content: m.content,
+					images: m.images ?? undefined,
 				})
 			}
 		}
