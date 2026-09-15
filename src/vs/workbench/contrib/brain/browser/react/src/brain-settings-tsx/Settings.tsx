@@ -8,7 +8,7 @@ import { ProviderName, SettingName, displayInfoOfSettingName, providerNames, Bra
 import ErrorBoundary from '../sidebar-tsx/ErrorBoundary.js'
 import { BrainButtonBgDarken, BrainCustomDropdownBox, BrainInputBox2, BrainSimpleInputBox, BrainSwitch } from '../util/inputs.js'
 import { useAccessor, useIsDark, useIsOptedOut, useRefreshModelListener, useRefreshModelState, useSettingsState } from '../util/services.js'
-import { X, RefreshCw, Loader2, Check, Asterisk, Plus } from 'lucide-react'
+import { X, RefreshCw, Loader2, LoaderCircle, Check, Asterisk, Plus, Import } from 'lucide-react'
 import { URI } from '../../../../../../../base/common/uri.js'
 import { ModelDropdown } from './ModelDropdown.js'
 import { ChatMarkdownRender } from '../markdown/ChatMarkdownRender.js'
@@ -1441,7 +1441,8 @@ export const Settings = () => {
 									</div>
 								</div>
 
-
+								{/* Import from Cursor section */}
+								<CursorImportSettingsSection />
 
 								{/* Built-in Settings section */}
 								<div>
@@ -1560,4 +1561,57 @@ Use Model Context Protocol to provide Agent mode with more tools.
 			</div>
 		</div>
 	);
+}
+
+const CursorImportSettingsSection = () => {
+	const accessor = useAccessor()
+	const cursorImportService = accessor.get('ICursorImportService')
+	const notificationService = accessor.get('INotificationService')
+	const [busyChats, setBusyChats] = useState(false)
+	const [busyRules, setBusyRules] = useState(false)
+
+	const onImportChats = async () => {
+		setBusyChats(true)
+		try {
+			const result = await cursorImportService.importFromCursor()
+			if (result.imported > 0) {
+				notificationService.info(`Imported ${result.imported} chats from Cursor${result.skipped > 0 ? ` (${result.skipped} skipped)` : ''}`)
+			} else {
+				notificationService.info(`Import from Cursor finished: 0 imported, ${result.skipped} skipped.${result.error ? ' ' + result.error : ''}`)
+			}
+		} catch (e) {
+			notificationService.info('Failed to import from Cursor: ' + e)
+		}
+		setBusyChats(false)
+	}
+
+	const onImportRules = async () => {
+		setBusyRules(true)
+		try {
+			const result = await cursorImportService.importCursorRulesToBrainrules()
+			notificationService.info(result.message)
+		} catch (e) {
+			notificationService.info('Failed to import rules from Cursor: ' + e)
+		}
+		setBusyRules(false)
+	}
+
+	return (
+		<div>
+			<h2 className='text-3xl mb-2'>Import from Cursor</h2>
+			<h4 className='text-brain-fg-3 mb-4'>Import your chats and rules directly from the Cursor IDE installed on this machine.</h4>
+			<div className='flex flex-col gap-8'>
+				<div className='flex flex-col gap-2 max-w-48 w-full'>
+					<BrainButtonBgDarken className='px-4 py-1 w-full' onClick={onImportChats} disabled={busyChats}>
+						{busyChats ? <LoaderCircle className='animate-spin inline-block mr-1' size={12} /> : <Import className='inline-block mr-1' size={12} />}
+						{busyChats ? 'Importing…' : 'Import All Chats'}
+					</BrainButtonBgDarken>
+					<BrainButtonBgDarken className='px-4 py-1 w-full' onClick={onImportRules} disabled={busyRules}>
+						{busyRules ? <LoaderCircle className='animate-spin inline-block mr-1' size={12} /> : <Import className='inline-block mr-1' size={12} />}
+						{busyRules ? 'Importing…' : 'Import Rules'}
+					</BrainButtonBgDarken>
+				</div>
+			</div>
+		</div>
+	)
 }

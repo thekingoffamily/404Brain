@@ -113,6 +113,7 @@ type WhenMounted = {
 
 export type ThreadType = {
 	id: string; // store the id here too
+	title?: string; // optional title (used for imported chats, eg from Cursor)
 	createdAt: string; // ISO string
 	lastModified: string; // ISO string
 
@@ -243,6 +244,9 @@ export interface IChatThreadService {
 	// thread selector
 	deleteThread(threadId: string): void;
 	duplicateThread(threadId: string): void;
+
+	// bulk import (eg chats imported from Cursor)
+	importThreads(threads: ThreadType[]): { imported: number };
 
 	// exposed getters/setters
 	// these all apply to current thread
@@ -1683,6 +1687,22 @@ We only need to do it for files that were edited since `from`, ie files between 
 		}
 		this._storeAllThreads(newThreads)
 		this._setState({ allThreads: newThreads })
+	}
+
+	importThreads(threads: ThreadType[]) {
+		const { allThreads: currentThreads } = this.state
+		const newThreads: ChatThreads = { ...currentThreads }
+		let imported = 0
+		for (const thread of threads) {
+			if (!thread || !thread.id) continue
+			if (newThreads[thread.id]) continue // never overwrite an existing thread
+			newThreads[thread.id] = thread
+			imported++
+		}
+		if (imported === 0) return { imported: 0 }
+		this._storeAllThreads(newThreads)
+		this._setState({ allThreads: newThreads })
+		return { imported }
 	}
 
 

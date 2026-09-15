@@ -738,6 +738,7 @@ const openAISettings: BrainStaticProviderInfo = {
 	},
 	providerReasoningIOSettings: {
 		input: { includeInPayload: openAICompatIncludeInPayloadReasoning },
+		output: { nameOfFieldInDelta: 'reasoning_content' },
 	},
 }
 
@@ -812,6 +813,7 @@ const xAISettings: BrainStaticProviderInfo = {
 	// same implementation as openai
 	providerReasoningIOSettings: {
 		input: { includeInPayload: openAICompatIncludeInPayloadReasoning },
+		output: { nameOfFieldInDelta: 'reasoning' },
 	},
 }
 

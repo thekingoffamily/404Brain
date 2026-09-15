@@ -16,6 +16,7 @@ import { ErrorDisplay } from './ErrorDisplay.js';
 import { BlockCode, TextAreaFns, BrainCustomDropdownBox, BrainInputBox2, BrainSlider, BrainSwitch, BrainDiffEditor } from '../util/inputs.js';
 import { ModelDropdown, } from '../brain-settings-tsx/ModelDropdown.js';
 import { PastThreadsList } from './SidebarThreadSelector.js';
+import { CursorImportBanner } from './CursorImportBanner.js';
 import { BRAIN_CTRL_L_ACTION_ID } from '../../../actionIDs.js';
 import { BRAIN_OPEN_SETTINGS_ACTION_ID } from '../../../brainSettingsPane.js';
 import { ChatMode, displayInfoOfProviderName, FeatureName, isFeatureNameDisabled } from '../../../../../../../workbench/contrib/brain/common/brainSettingsTypes.js';
@@ -3371,6 +3372,10 @@ export const SidebarChat = () => {
 	>
 		<ErrorBoundary>
 			{landingPageInput}
+		</ErrorBoundary>
+
+		<ErrorBoundary>
+			<CursorImportBanner />
 		</ErrorBoundary>
 
 		{Object.keys(chatThreadsState.allThreads).length > 1 ? // show if there are threads

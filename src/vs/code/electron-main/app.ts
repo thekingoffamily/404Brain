@@ -133,6 +133,7 @@ import { LLMMessageChannel } from '../../workbench/contrib/brain/electron-main/s
 import { BrainSCMService } from '../../workbench/contrib/brain/electron-main/brainSCMMainService.js';
 import { IBrainSCMService } from '../../workbench/contrib/brain/common/brainSCMTypes.js';
 import { MCPChannel } from '../../workbench/contrib/brain/electron-main/mcpChannel.js';
+import { CursorImportChannel } from '../../workbench/contrib/brain/electron-main/cursorImportChannel.js';
 /**
  * The main VS Code application. There will only ever be one instance,
  * even if the user starts many instances (e.g. from the command line).
@@ -1253,6 +1254,10 @@ export class CodeApplication extends Disposable {
 		// Brain added this
 		const mcpChannel = new MCPChannel();
 		mainProcessElectronServer.registerChannel('brain-channel-mcp', mcpChannel);
+
+		// Brain added this
+		const cursorImportChannel = new CursorImportChannel();
+		mainProcessElectronServer.registerChannel('brain-channel-cursorImport', cursorImportChannel);
 
 		// Extension Host Debug Broadcasting
 		const electronExtensionHostDebugBroadcastChannel = new ElectronExtensionHostDebugBroadcastChannel(accessor.get(IWindowsMainService));

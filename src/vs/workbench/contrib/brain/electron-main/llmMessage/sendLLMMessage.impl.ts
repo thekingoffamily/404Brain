@@ -368,12 +368,11 @@ const _sendOpenAICompatibleChat = async ({ messages, onText, onFinalMessage, onE
 
 
 				// reasoning
-				let newReasoning = ''
-				if (nameOfReasoningFieldInDelta) {
-					// @ts-ignore
-					newReasoning = (chunk.choices[0]?.delta?.[nameOfReasoningFieldInDelta] || '') + ''
-					fullReasoningSoFar += newReasoning
-				}
+				const deltaChunk = chunk.choices[0]?.delta as Record<string, unknown> | undefined
+				const configuredReasoning = nameOfReasoningFieldInDelta ? (deltaChunk?.[nameOfReasoningFieldInDelta] ?? '') + '' : ''
+				const fallbackReasoning = (deltaChunk?.reasoning_content ?? deltaChunk?.reasoning ?? deltaChunk?.reasoning_summary ?? deltaChunk?.thinking ?? '') + ''
+				const newReasoning = configuredReasoning || fallbackReasoning
+				if (newReasoning) fullReasoningSoFar += newReasoning
 
 				// call onText
 				onText({
@@ -805,9 +804,20 @@ const sendGeminiChat = async ({
 
 			// Process the stream
 			for await (const chunk of stream) {
-				// message
-				const newText = chunk.text ?? ''
-				fullTextSoFar += newText
+				// message + reasoning (Gemini thought parts)
+				const parts = (chunk.candidates?.[0]?.content?.parts as Array<{ text?: string; thought?: boolean }>) ?? []
+				if (parts.length > 0) {
+					for (const part of parts) {
+						const partText = part.text ?? ''
+						if (part.thought && partText) {
+							fullReasoningSoFar += partText
+						} else {
+							fullTextSoFar += partText
+						}
+					}
+				} else {
+					fullTextSoFar += chunk.text ?? ''
+				}
 
 				// tool call
 				const functionCalls = chunk.functionCalls
@@ -817,8 +827,6 @@ const sendGeminiChat = async ({
 					toolParamsStr = JSON.stringify(functionCall.args ?? {})
 					toolId = functionCall.id ?? ''
 				}
-
-				// (do not handle reasoning yet)
 
 				// call onText
 				onText({

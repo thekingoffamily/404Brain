@@ -17,6 +17,18 @@
 
 ---
 
+## 🔒 ВТОРОЕ ПРАВИЛО — ПОМНИТЬ И ЗАПИСЫВАТЬ
+
+**ВСЕГДА, ДЛЯ ВСЕХ — ВСЁ ЗАПОМИНАТЬ И КЕЙСЫ ВСЕ ЗАПИСЫВАТЬ (что к чему).**
+
+- Каждая важная механика/факт/архитектурное решение/найденный формат данных должен быть зафиксирован,
+  а не жить только в голове/контексте.
+- Факты про чужой софт (как хранит данные Cursor/другие приложения), форматы, найденные баги, рецепты —
+  складывай в AGENTS.md (или отдельные заметки в репо). Кейсы — «что к чему». Потом это экономит часы.
+- При открытии новой сессии перечитывай AGENTS.md перед правками.
+
+---
+
 ## Суть проекта
 
 404Brain — форк `code-oss-dev` (базовый VS Code) **1.99.3**, в который встроен ИИ-помощник «Brain»:
@@ -62,12 +74,14 @@ browser/
   toolsService.ts               — встроенные инструменты (edit_file, rewrite_file, terminal и т.д.)
   terminalToolService.ts        — постоянные терминалы
   editCodeService.ts            — правка кода inline (Ctrl+K зона)
-  brainCommandBarService.ts     — командный бар (Ctrl+L / Ctrl+K)
+  brainCommandBarService.ts     — командный бар (Ctrl+L / Ctrl/K)
   electron-main/mcpChannel.ts   — IPC-cервер MCP (main process)
+  electron-main/cursorImportChannel.ts — IPC-импорт из Cursor (сканирует state.vscdb, читает чаты/rules)
   react/                       — весь UI (см. ниже)
 common/                         — сервисы, но доступные и из main
   brainSettingsService.ts       — настройки и провайдеры (глобальные настройки + per-provider)
   brainSettingsTypes.ts         — типы настроек, инфа о провайдерах/фичах
+  cursorImportService.ts / cursorImportServiceTypes.ts — клиентский сервис импорта из Cursor (канал brain-channel-cursorImport)
   chatThreadServiceTypes.ts     — типы сообщений (ChatMessage, BrainChatImage, ToolMessage...)
   sendLLMMessageTypes.ts        — типы сообщений LLM (OpenAI/Anthropic/Gemini форматы)
   sendLLMMessageService.ts      — отправка и стриминг к провайдерам
@@ -107,29 +121,41 @@ browser/react/src/
 
 ## История работ
 
-### [current] — сессия 1.6.1 (текущая)
-Состояние: **готово к финальной сборке** (нужен `npm run gulp vscode-win32-x64`), релиз не сделан.
+### [current] — сессия 1.6.2 (текущая)
+Состояние: **сборка/релиз в процессе**
 
 Сделано в этой сессии:
-1. **Markdown-фикс** (`react/src/markdown/ChatMarkdownRender.tsx`): убран латекс-препроцессинг, добавлен `InlineTokens` (вложенные strong/em/del/blockquote/link/code), параметр `text/escape`.
-2. **Картинки в чат**: типы `BrainChatImage`, `OpenAIUserContentPart`, `AnthropicImagePart/Source/MediaType`;
-   `convertToLLMMessageService.ts` (`parseDataUrl`, `openAIImageParts`, `anthropicImageParts`, `mergeContent`);
-   `chatThreadService.ts` (поле `images` у user-сообщения, проброс в `addUserMessageAndStreamResponse` и edit);
-   `SidebarChat.tsx` (`StagingImages`, `AttachImagesButton`, Ctrl+V паста, `readFileAsDataUrl` + даунскейл до 1280px, макс 4 шт).
-3. **Фикс очередности сообщений**: `_runToolCall` НЕ вставляет «running»-плейсхолдер в чат до выполнения;
-   `_swapOutLatestStreamingToolWithResult` ищет последний tool-месседж с конца (пропуская checkpoint-ы);
-   `SidebarChat.tsx`: стриминг-бабл только при `isRunning === 'LLM'`, лоадер и при `isRunning === 'tool'`.
-4. **MCP/правила/скилы из чата**: компонент `AddStuffMenu` в `SidebarChat.tsx` (кнопка `+` у поля ввода):
-   Attach image / Add MCP server (открывает mcp.json) / Create `.brainrules` / Create a skill (шаблон `.brainskills/example.md`).
-   Создание файлов — через `IFileService` + `brainOpenFileFn`. После создания скила — `brainModelService.initializeModel` для мгновенного подхвата.
-5. **Скилы реализованы**: `.brainskills/*.md` читаются и подмешиваются в системное сообщение.
-   `brainModelService.ts`: добавлен `getModelFSPaths()`. `convertToLLMMessageWorkbenchContrib.ts`: инициализация моделей `.brainskills/*.md` (через `fileService.resolve`).
-6. `Settings.tsx`: в раздел AI Instructions добавлено упоминание `.brainskills` папки.
-
-Проверено: `npm run buildreact` ✅, `npm run compile` ✅ (0 ошибок).
-**Ещё не сделано**: полная сборка win32-x64, zip, коммит/пуш, релиз `v1.6.1`, статьи.
+1. **Регламент Cursor в системный промпт агента** (`common/prompt/prompts.ts`): добавлен блок `agentSpecs` для `mode === 'agent'` —
+   `<communication>`, `<status_update>`, `<summary>`, `<tool_calling>` (ONE tool call at a time — сохранено), `<flow>`,
+   `<looking_before_leaping>`, `<code_style>`, `<citing_code>` (формат `startLine:endLine:/full/absolute/path`).
+2. **Язык ответов** (`common/prompt/prompts.ts`): новый блок `<language>` во всех режимах чата —
+   отвечать на языке пользователя (Привет → по-русски), код/термины остаются на английском, запрет самовольно переключаться на другой язык.
+3. **Reasoning «как у Cursor» — извлечение думалки у провайдеров**:
+   - `electron-main/llmMessage/sendLLMMessage.impl.ts`: OpenAI-совместимый парсер толерантен — конфигурируемое поле,
+     а если пусто: `reasoning_content` → `reasoning` → `reasoning_summary` → `thinking` (раньше openAI/xAI вообще не отдавали думалку,
+     aiTunnel/OpenRouter ловили только `reasoning`, а pass-through апстримы шлют `reasoning_content`).
+   - Gemini: извлекаются thought-парты (`part.thought === true`) в `fullReasoning` (было «do not handle reasoning yet», думалка текла в displayContent).
+   - `common/modelCapabilities.ts`: добавлен `output` для openAI (`reasoning_content`) и xAI (`reasoning`).
+   - Рендер блока рассуждений (`ReasoningWrapper` в `SidebarChat.tsx`) уже существовал — теперь данные доходят до него у всех провайдеров.
+4. **compile** ✅ (0 ошибок).
+5. **Импорт из Cursor (автомат)** — фича сессии 1.6.2:
+   - Формат Cursor (что где лежит): `%APPDATA%\Cursor\User\workspaceStorage\<hash>\state.vscdb` (SQLite).
+     Чаты — ключ `workbench.panel.aichat.view.aichat.chatdata` (JSON, `tabs[]` → `bubbles[]` user/ai c `text`),
+     композеры — `composer.composerData` (в основном служебные/короткие). Папка воркспейса — `workspace.json` → `folder` (`file:///h%3A/...`).
+     `conversation-search.db` (FTS) НЕ используем; таблицы `composerHeaders/cursorDiskKV` пусты. 218 воркспейсов с чатами.
+   - Выбор чтения: `@vscode/sqlite3` (уже в проекте, `import('@vscode/sqlite3')`), БД открываем ТОЛЬКО с `PRAGMA query_only=ON` (Cursor не трогаем).
+   - Архитектура: main-процесс `electron-main/cursorImportChannel.ts` (IServerChannel, команды scan/read/importRules) +
+     renderer-сервис `common/cursorImportService.ts` (канал `brain-channel-cursorImport`, dedupe по `brain.cursorImport.seenIds`,
+     конвертация chatdata → треды 404Brain, `currentWorkspaceConversations` считается на клиенте).
+   - Rules: `.cursorrules` + `.cursor/rules/*.mdc` + глобальные `~/.cursor/rules` → `.brainrules` (только если файла ещё нет).
+   - UI: авто-баннер `sidebar-tsx/CursorImportBanner.tsx` на лендинге чата (сам находит чаты, кнопка «Import all»),
+     в Settings.tsx секция «Import from Cursor» (Import All Chats / Import Rules).
+   - `chatThreadService.ts`: `ThreadType` получил `title?: string`, добавлен `importThreads(threads)`.
+6. Релиз `v1.6.2`.
 
 ### Прошлые сессии (кратко)
+- **v1.6.1**: markdown-фикс (InlineTokens), картинки в чат (vision OpenAI/Anthropic/Gemini), фикс очередности сообщений,
+  меню «+» в чате (Attach image / MCP / .brainrules / skill), скилы `.brainskills/*.md`, AGENTS.md-документация. Релиз `v1.6.1`.
 - **v1.6.0**: добавлены SSH/WSL extension API proposals, bump версия; бонусные фиксы markdown/UI. Релиз `v1.6.0` сделан.
 - Более ранние: базовая система Brain (чат, agent, FIM, инструменты, MCP, настройки провайдеров).
 
