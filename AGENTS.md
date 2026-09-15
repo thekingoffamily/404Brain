@@ -35,7 +35,18 @@
 чат в сайдбаре, Agent mode, правка кода, FIM (autocomplete) в редакторе, поддержка многих провайдеров
 (OpenAI, Anthropic, Gemini, DeepSeek и др.), MCP-серверы, `.brainrules` и `.brainskills`.
 
-Версия продукта: `product.json` → `brainVersion` (сейчас **1.6.1**), `brainRelease` (сейчас **0047**).
+Версия продукта: `product.json` → `brainVersion` (сейчас **1.7.0**), `brainRelease` (сейчас **0049**).
+
+---
+
+## 📚 Документация — docs/
+
+Подробные MD-заметки лежат в `docs/` (читай при разборе задач):
+- `docs/architecture.md` — карта файлов, потоки данных, темы/иконки, импорт Cursor.
+- `docs/tools-and-skills.md` — полный каталог builtin-тулзов и комбо-паттерны (умения).
+- `docs/build-and-run.md` — сборка, релиз, разворот на новом ПК.
+
+При добавлении новых тулзов/механик — актуализируй docs/.
 
 ---
 
@@ -121,7 +132,40 @@ browser/react/src/
 
 ## История работ
 
-### [current] — сессия 1.6.2 (завершена)
+### [current] — сессия 1.7.0 (в работе)
+Состояние: **в разработке** (предыдущий релиз — v1.6.2).
+
+Сделано в этой сессии:
+1. **Дефолтные тема и иконки (Bearded)**:
+   - В репо добавлены локальные расширения `extensions/beardedtheme` (BeardedBear 10.1.0) и
+     `extensions/beardedicons` (BeardedBear 1.22.0); package.json очищены от dev-мусора (шкрипты/deps).
+     Скачаны VSIX с Marketplace, распакованы (обход: `.vsix` → копия `.zip` + `ZipFile::ExtractToDirectory`,
+     PowerShell `Expand-Archive` VSIX не принимает).
+   - `src/vs/workbench/services/themes/common/workbenchThemeService.ts` → `ThemeSettingDefaults`:
+     `COLOR_THEME_DARK = 'Bearded Theme Coffee'`, `FILE_ICON_THEME = 'bearded-icons'`,
+     `COLOR_THEME_DARK_OLD = 'Default Dark+'` (миграция). Механика: `settingsId = theme.id || label`
+     (`colorThemeData.ts`), для иконок `settingsId = iconTheme.id`.
+   - Extensions в продукт попадают из `extensions/*/package.json` автоматически
+     (`build/lib/extensions.js` → `packageNonNativeLocalExtensionsStream`); excludedExtensions их не трогает.
+   - Кейс: package.json расширений, сохранённые PowerShell с UTF-8 BOM, роняют этап
+     `bundle-non-native-extensions-build` (`Error parsing 'package.json' manifest file: not a valid JSON file`)
+     — сохраняем JSON без BOM.
+2. **Новые builtin-тулзы (умения=тулзы)**:
+   - `toolsServiceTypes.ts`: `get_selection`, `get_active_file`, `get_open_tabs`, `get_workspace_info` (read-only,
+     без одобрения) и `get_git_status` (с `approvalTypeOfBuiltinToolName: 'terminal'`).
+   - `toolsService.ts`: реализация через `ICodeEditorService` (getActiveCodeEditor) и `IEditorService` (editors),
+     `get_git_status` → `terminalToolService.runCommand('git status --short --branch')`.
+   - `prompts.ts` → `builtinTools`: описания всех новых тулзов (иначе `satisfies` не соберётся).
+3. **Промпты**: блок `<always_analyze>` для всех режимов (всегда думать→проверять→валидировать, не предполагать
+   содержимое файлов) + блок `<skills>` в agentSpecs (каталог умений/комбо-паттернов).
+   Reasoning для Chat включён по умолчанию и раньше (агент работает через `'Chat'`).
+4. **docs/**: `docs/readme.md`, `docs/architecture.md`, `docs/tools-and-skills.md`, `docs/build-and-run.md`.
+5. **product.json**: `brainVersion` → 1.7.0, `brainRelease` → 0049.
+6. **compile** ✅ (0 ошибок).
+
+### Прошлые сессии
+
+### сессия 1.6.2 (завершена)
 Состояние: **релиз v1.6.2 выпущен** (404Brain-win32-x64-1.6.2.zip, tag v1.6.2)
 
 Сделано в этой сессии:

@@ -19,6 +19,8 @@ import { RawToolParamsObj } from '../common/sendLLMMessageTypes.js'
 import { MAX_CHILDREN_URIs_PAGE, MAX_FILE_CHARS_PAGE, MAX_TERMINAL_BG_COMMAND_TIME, MAX_TERMINAL_INACTIVE_TIME } from '../common/prompt/prompts.js'
 import { IBrainSettingsService } from '../common/brainSettingsService.js'
 import { generateUuid } from '../../../../base/common/uuid.js'
+import { ICodeEditorService } from '../../../../editor/browser/services/codeEditorService.js'
+import { IEditorService } from '../../../services/editor/common/editorService.js'
 
 
 // tool use for AI
@@ -153,6 +155,8 @@ export class ToolsService implements IToolsService {
 		@IDirectoryStrService private readonly directoryStrService: IDirectoryStrService,
 		@IMarkerService private readonly markerService: IMarkerService,
 		@IBrainSettingsService private readonly brainSettingsService: IBrainSettingsService,
+		@ICodeEditorService private readonly codeEditorService: ICodeEditorService,
+		@IEditorService private readonly editorService: IEditorService,
 	) {
 		const queryBuilder = instantiationService.createInstance(QueryBuilder);
 
@@ -228,6 +232,24 @@ export class ToolsService implements IToolsService {
 				} = params
 				const uri = validateURI(uriUnknown)
 				return { uri }
+			},
+
+			get_selection: () => {
+				return {}
+			},
+			get_active_file: () => {
+				return {}
+			},
+			get_open_tabs: () => {
+				return {}
+			},
+			get_workspace_info: () => {
+				return {}
+			},
+			get_git_status: (params: RawToolParamsObj) => {
+				const { cwd: cwdUnknown } = params
+				const cwd = validateOptionalURI(cwdUnknown)
+				return { cwd }
 			},
 
 			// ---
@@ -394,6 +416,44 @@ export class ToolsService implements IToolsService {
 				return { result: { lintErrors } }
 			},
 
+			get_selection: async () => {
+				const editor = this.codeEditorService.getActiveCodeEditor()
+				if (!editor) {
+					return { result: { activeFileUri: null, selectedText: null, selectionLines: null } }
+				}
+				const model = editor.getModel()
+				const selection = editor.getSelection()
+				if (!selection) {
+					return { result: { activeFileUri: model?.uri ?? null, selectedText: null, selectionLines: null } }
+				}
+				const selectedText = model ? model.getValueInRange(selection) : ''
+				return {
+					result: {
+						activeFileUri: model?.uri ?? null,
+						selectedText,
+						selectionLines: { startLineNumber: selection.startLineNumber, endLineNumber: selection.endLineNumber },
+					}
+				}
+			},
+			get_active_file: async () => {
+				const editor = this.codeEditorService.getActiveCodeEditor()
+				const uri = editor?.getModel()?.uri ?? null
+				return { result: { uri } }
+			},
+			get_open_tabs: async () => {
+				const uris = this.editorService.editors.map(e => e.resource).filter((r): r is URI => !!r)
+				return { result: { uris } }
+			},
+			get_workspace_info: async () => {
+				const workspaceFolders = workspaceContextService.getWorkspace().folders.map(f => f.uri.fsPath)
+				return { result: { workspaceFolders } }
+			},
+			get_git_status: async ({ cwd }) => {
+				const folder = cwd ?? workspaceContextService.getWorkspace().folders[0]?.uri ?? null
+				const { resPromise } = await this.terminalToolService.runCommand('git status --short --branch', { type: 'temporary', cwd: folder?.fsPath ?? null, terminalId: generateUuid() })
+				return { result: resPromise }
+			},
+
 			// ---
 
 			create_file_or_folder: async ({ uri, isFolder }) => {
@@ -504,6 +564,30 @@ export class ToolsService implements IToolsService {
 				return result.lintErrors ?
 					stringifyLintErrors(result.lintErrors)
 					: 'No lint errors found.'
+			},
+			get_selection: (_params, result) => {
+				if (!result.activeFileUri) return 'No active editor with a selection.'
+				if (!result.selectedText) return `Active file: ${result.activeFileUri.fsPath}. No text selected.`
+				return `Active file: ${result.activeFileUri.fsPath}\nSelection (lines ${result.selectionLines?.startLineNumber}-${result.selectionLines?.endLineNumber}):\n\`\`\`\n${result.selectedText}\n\`\`\``
+			},
+			get_active_file: (_params, result) => {
+				return result.uri ? `Active file: ${result.uri.fsPath}` : 'No active file.'
+			},
+			get_open_tabs: (_params, result) => {
+				return result.uris.length ? `Open tabs:\n${result.uris.map(u => u.fsPath).join('\n')}` : 'No tabs are open.'
+			},
+			get_workspace_info: (_params, result) => {
+				return result.workspaceFolders.length ? `Workspace folders:\n${result.workspaceFolders.join('\n')}` : 'No workspace folders are open.'
+			},
+			get_git_status: (params, result) => {
+				const { resolveReason, result: result_ } = result
+				if (resolveReason.type === 'done') {
+					return `Git status (exit code ${resolveReason.exitCode}):\n${result_}`
+				}
+				if (resolveReason.type === 'timeout') {
+					return `Git status timed out. Partial output:\n${result_}`
+				}
+				throw new Error(`Unexpected internal error: Git status did not resolve with a valid reason.`)
 			},
 			// ---
 			create_file_or_folder: (params, result) => {

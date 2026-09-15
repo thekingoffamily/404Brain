@@ -39,15 +39,15 @@ export enum ThemeSettings {
 }
 
 export enum ThemeSettingDefaults {
-	COLOR_THEME_DARK = 'Default Dark+', // Brain changed this from 'Default Dark Modern'
+	COLOR_THEME_DARK = 'Bearded Theme Coffee', // Brain changed from 'Default Dark+'
 	COLOR_THEME_LIGHT = 'Default Light Modern',
 	COLOR_THEME_HC_DARK = 'Default High Contrast',
 	COLOR_THEME_HC_LIGHT = 'Default High Contrast Light',
 
-	COLOR_THEME_DARK_OLD = 'Default Dark Modern', // Brain changed this from 'Default Dark+'
+	COLOR_THEME_DARK_OLD = 'Default Dark+', // Brain migration fallback
 	COLOR_THEME_LIGHT_OLD = 'Default Light+',
 
-	FILE_ICON_THEME = 'vs-seti',
+	FILE_ICON_THEME = 'bearded-icons', // Brain changed from 'vs-seti'
 	PRODUCT_ICON_THEME = 'Default',
 }
 

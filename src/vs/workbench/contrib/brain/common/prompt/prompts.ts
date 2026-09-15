@@ -267,6 +267,40 @@ export const builtinTools: {
 		},
 	},
 
+	// --- editor context (read-only, zero-parameter) ---
+
+	get_selection: {
+		name: 'get_selection',
+		description: `Returns the text currently selected in the active editor, the active file, and the selected line range. Use this when you need to know what the user has highlighted, or to act precisely on a selected block of code.`,
+		params: {},
+	},
+
+	get_active_file: {
+		name: 'get_active_file',
+		description: `Returns the full path of the file currently focused in the editor. Use this when you need to know which file the user is looking at or working on.`,
+		params: {},
+	},
+
+	get_open_tabs: {
+		name: 'get_open_tabs',
+		description: `Returns the list of all files currently open in editor tabs. Use this to understand what files the user has around, or to pick related files for context.`,
+		params: {},
+	},
+
+	get_workspace_info: {
+		name: 'get_workspace_info',
+		description: `Returns the list of workspace root folders. Use this to confirm the workspace layout before making broad changes.`,
+		params: {},
+	},
+
+	get_git_status: {
+		name: 'get_git_status',
+		description: `Runs "git status --short --branch" in the given folder (defaults to the first workspace folder) and returns the current git state: modified/untracked files and the current branch. Use this when a task depends on git state.`,
+		params: {
+			cwd: { description: 'Optional. The folder to run git status in. Leave empty to use the first workspace folder.' },
+		},
+	},
+
 	// --- editing (create/delete) ---
 
 	create_file_or_folder: {
@@ -519,6 +553,15 @@ ${details.map((d, i) => `${i + 1}. ${d}`).join('\n\n')}`)
 </language>`)
 
 
+	const alwaysAnalyze = (`<always_analyze>
+- Always reason before you answer and before you act. Do not jump to a response or an edit without first thinking through the situation.
+- When you have enough information, state your conclusion confidently; when you do not, gather more context instead of guessing.
+- Constantly verify and double-check: re-read the code you are about to change, the imports and call sites it touches, and the actual tool results. Never assume a file's content, a symbol's signature, or an API's shape.
+- After every edit, validate the result (re-read the changed region, check for lint errors with read_lint_errors) and fix anything that broke before telling the user you are done.
+- For any non-trivial task, briefly show your working: what you checked, what you concluded, and why you chose the approach. Do not, however, paste unnecessary reasoning about trivial questions.
+</always_analyze>`)
+
+
 	const agentSpecs = mode === 'agent' ? `\
 <communication>
 - Use markdown only where it is semantically correct: backticks for file, directory, function, and class names; fenced code blocks only for actual code; \\( \\) for inline math and \\[ \\] for block math.
@@ -570,6 +613,17 @@ ${details.map((d, i) => `${i + 1}. ${d}`).join('\n\n')}`)
 - When you need external API or library types, check the actual installed sources instead of guessing the shape.
 </looking_before_leaping>
 
+<skills>
+- You have a large catalog of skills, each implemented as one or more tool calls. Pick the right combination per task; chain tools when a single call is not enough.
+- Exploration: get_dir_tree / ls_dir + read_file of key files, get_workspace_info, get_open_tabs. Prefer get_dir_tree for orientation, read_file for details.
+- Precise edits: read_file (or get_selection) to see exactly what is there, then edit_file with search/replace blocks, then read_lint_errors to verify.
+- Whole-file replacement: read_file first for style/context, then rewrite_file.
+- Find things: search_pathnames_only (file names) or search_for_files (content), then read_file the matched files.
+- Reasoning & verification: get_selection when the user highlights code, get_git_status before and after to confirm the workspace impact, read_lint_errors after every change.
+- Terminal work: open_persistent_terminal for long-running processes, otherwise run_command; use run_persistent_command on an already-open terminal.
+- When a tool returns an error, diagnose from the output and retry a corrected call rather than giving up.
+</skills>
+
 <answer_questions_and_concise>
 - When the user asks a question, answer it directly FIRST, then make edits or run commands.
 - No fluff or cheerful filler. Be direct and technical. No \`Great question!\`, no \`Absolutely!\`, no emojis, no \`Thanks!\` on every message.
@@ -602,6 +656,7 @@ ${details.map((d, i) => `${i + 1}. ${d}`).join('\n\n')}`)
 	if (toolDefinitions) ansStrs.push(toolDefinitions)
 	ansStrs.push(importantDetails)
 	ansStrs.push(languageInstruction)
+	ansStrs.push(alwaysAnalyze)
 	if (agentSpecs) ansStrs.push(agentSpecs)
 	ansStrs.push(fsInfo)
 
