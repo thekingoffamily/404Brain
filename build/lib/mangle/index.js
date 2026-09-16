@@ -497,10 +497,13 @@ class Mangler {
         const renameResults = [];
         const queueRename = (fileName, pos, newName) => {
             renameResults.push(Promise.resolve(this.renameWorkerPool.exec('findRenameLocations', [this.projectPath, fileName, pos]))
-                .then((locations) => ({ newName, locations })));
+                .then((locations) => ({ newName, locations: locations.filter(loc => !loc.fileName.includes('/node_modules/')) })));
         };
         for (const data of this.allClassDataByKey.values()) {
             if (hasModifier(data.node, typescript_1.default.SyntaxKind.DeclareKeyword)) {
+                continue;
+            }
+            if (data.fileName.includes('/node_modules/')) {
                 continue;
             }
             fields: for (const [name, info] of data.fields) {
@@ -522,6 +525,7 @@ class Mangler {
         }
         for (const data of this.allExportedSymbols.values()) {
             if (data.fileName.endsWith('.d.ts')
+                || data.fileName.includes('/node_modules/')
                 || skippedExportMangledProjects.some(proj => data.fileName.includes(proj))
                 || skippedExportMangledFiles.some(file => data.fileName.endsWith(file + '.ts'))) {
                 continue;

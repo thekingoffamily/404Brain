@@ -35,7 +35,7 @@
 чат в сайдбаре, Agent mode, правка кода, FIM (autocomplete) в редакторе, поддержка многих провайдеров
 (OpenAI, Anthropic, Gemini, DeepSeek и др.), MCP-серверы, `.brainrules` и `.brainskills`.
 
-Версия продукта: `product.json` → `brainVersion` (сейчас **1.7.0**), `brainRelease` (сейчас **0049**).
+Версия продукта: `product.json` → `brainVersion` (сейчас **1.7.1**), `brainRelease` (сейчас **0050**).
 
 ---
 
@@ -145,7 +145,32 @@ browser/react/src/
 ## История работ
 
 ### [current] — сессия 1.8.0 (в работе)
-Состояние: **в разработке** (предыдущий релиз — v1.7.0).
+Состояние: **в разработке** (релиз 1.7.0 выпущен; готовится **v1.7.1 / 0050**).
+
+Сделано в этой сессии (планируется):
+1. **Фикс boot-краша (серый экран)** после релиза v1.7.0 (коммит `238607b3`):
+   - Краш 1: `TypeError: decorator is not a function` — цикл common↔browser: `common/cursorImportService.ts`
+     импортировал токен `IChatThreadService` из `browser/chatThreadService.ts`; esbuild клал браузерный модуль
+     ПОСЛЕ использования → токен `undefined` в `__param(3, ...)`. Фикс: токен перенесён в
+     `common/chatThreadServiceTypes.ts` (`createDecorator('brainChatThreadService')`), browser ре-экспортирует.
+   - Краш 2: `ReferenceError: process is not defined` — `const pathSep = process.platform === 'win32'` в том же
+     файле; sandbox-рендерер без `process`. Фикс: `isWindows` из `base/common/platform.js`.
+   - Проверка: токен в бандле объявлен ДО `CursorImportService = __decorate([...])`; изолированная сессия
+     (`--user-data-dir=новый`) стабильна 4+ мин, лог чист.
+2. **Remote-сервер (SSH/REH) — версии и автоустановка** (замена битого REH в release `1.99.3`, кейс `.144`):
+   - Механизм: `extensions/open-remote-ssh/src/serverSetup.ts` — `DEFAULT_DOWNLOAD_URL_TEMPLATE`
+     `releases/download/<version>/brain-reh-<os>-<arch>-<version>.tar.gz`; сервер ставится автоматически
+     в `~/.404brain-server/bin/<git-commit>` при подключении.
+   - `Client refused: version mismatch` — серверная проверка `remoteExtensionHostAgentServer.ts:384`:
+     `rendererCommit !== myCommit`. Совпадение commit'ов клиент↔сервер ОБЯЗАТЕЛЬНО: desktop и REH собирать
+     из одной ревизии (HEAD). Битый ассет был собран раньше → на `.144` после обновления tar перепроверить.
+   - Кейс: mangler может упасть на `.d.ts` из node_modules (`OVERLAPPING edit`,
+     `google-auth-library/.../impersonated.d.ts`) → в `build/lib/mangle/index.js` node_modules исключён из моглинга.
+   - Кейс: алиас `144` в `~/.ssh/config` был битый (`Host 144<мусор>!`) — поправлен.
+3. **Дефолтные умения (Agent Skills)**: блок `<default_skills>` в `prompts.ts` (code-review, debugging,
+   test-writing, refactoring, git-workflow, codebase-onboarding, security-review, performance-analysis,
+   api-integration, documentation-writing). Формат agentskills.io (name + when + how).
+4. `brainVersion` → 1.7.1, `brainRelease` → 0050.
 
 ### Прошлые сессии
 

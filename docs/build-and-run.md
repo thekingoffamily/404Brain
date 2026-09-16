@@ -31,6 +31,27 @@ npm run gulp vscode-win32-x64
 7. **Реф-ссылка партнёрская (обязательно): `https://aitunnel.ru/?r=52512`**.
 8. Статьи: черновики в `articles/vc.ru/`, шаблон `articles/_template.md`.
 
+## Remote-сервер (SSH/REH) — сборка и «релиз»
+Remote-SSH ставит сервер на удалённую машину АВТОМАТИЧЕСКИ: клиент скачивает из GitHub releases
+(`DEFAULT_DOWNLOAD_URL_TEMPLATE` в `extensions/open-remote-ssh/src/serverSetup.ts`):
+`https://github.com/thekingoffamily/404Brain/releases/download/<tag>/brain-reh-<os>-<arch>-<version>.tar.gz`,
+где `<version>` = версия app package.json (сейчас `1.99.3`), `<tag>` = та же версия, os/arch = linux/x64|arm64|...
+→ распаковка `--strip-components 1` в `~/.404brain-server/bin/<git-commit>` → запуск `bin/404brain-server`.
+
+Чтобы remote вообще работал, **commit клиента и сервера должны совпадать** (обоих обязан быть текущий git HEAD):
+на сервере при хендшейке `remoteExtensionHostAgentServer.ts` проверяет `rendererCommit !== myCommit` →
+`Client refused: version mismatch`. Поэтому:
+1. Собери REH из ТОЙ ЖЕ ревизии, что и desktop: `$env:NODE_OPTIONS='--max-old-space-size=8192'`; `npm run gulp vscode-reh-linux-x64` → `C:\Users\palapalaru\Desktop\vscode-reh-linux-x64` (~1.5 ч, тянет node.js для linux).
+2. Упакуй содержимое папки в `brain-reh-linux-x64-<version>.tar.gz` (`tar -a -c -f ... -C <папка> .`), обнови ассет:
+   `gh release upload <версия-тег> brain-reh-linux-x64-<version>.tar.gz --clobber` (сегодня тег `1.99.3`).
+3. На уже подключавшихся серверах лишние старые папки `~/.404brain-server/bin/<старый-commit>` можно удалить;
+   при следующем подключении клиент сам поставит свежий сервер под свой commit (свежих серверов это касается автоматически).
+
+Кейс: mangler (minify классов) может упасть на `.d.ts` из node_modules (`OVERLAPPING edit`,
+например `google-auth-library/.../impersonated.d.ts`) — node_modules исключён из переименований
+(см. `build/lib/mangle/index.js`, guard `/node_modules/`). Если менять до-коммитную ревизию —
+сначала закоммить, иначе `product.json.commit` останется от старого HEAD и remote не совпадёт.
+
 ## Разворот на новом ПК
 1. `git clone` репозитория 404Brain.
 2. `npm install` (окружение VS Code 1.99.3).

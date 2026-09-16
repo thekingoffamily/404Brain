@@ -57,6 +57,15 @@
    `run_persistent_command` в уже открытом терминале.
 7. **Ошибки тулзов**: не сдаваться — диагностировать вывод и повторить с исправленными параметрами.
 
+## Дефолтные умения (Agent Skills, v1.7.1)
+
+Блок `<default_skills>` в системном промпте всегда доступен (формат Agent Skills — name + when + how),
+агент применяет нужное умение по задаче:
+`code-review`, `debugging`, `test-writing`, `refactoring`, `git-workflow`, `codebase-onboarding`,
+`security-review`, `performance-analysis`, `api-integration`, `documentation-writing`.
+Каждое содержит краткий регламент (прочитать дифф и файлы → найти причину/минимум → изменить →
+проверить той же командой). Полный текст — в `common/prompt/prompts.ts`.
+
 ## Правила работы агента (в системном промпте)
 
 - **Всегда анализировать** (`<always_analyze>`): думать до ответа/действия, проверять факты тулзами,
