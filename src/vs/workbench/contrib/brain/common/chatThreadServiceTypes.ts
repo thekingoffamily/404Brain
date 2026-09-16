@@ -7,6 +7,8 @@ import { URI } from '../../../../base/common/uri.js';
 import { BrainFileSnapshot } from './editCodeServiceTypes.js';
 import { AnthropicReasoning, RawToolParamsObj } from './sendLLMMessageTypes.js';
 import { ToolCallParams, ToolName, ToolResult } from './toolsServiceTypes.js';
+import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
+import type { IChatThreadService as IChatThreadServiceInterface } from '../browser/chatThreadService.js';
 
 export type ToolMessage<T extends ToolName> = {
 	role: 'tool';
@@ -108,3 +110,9 @@ export type CodespanLocationLink = {
 		endColumn: number,
 	} | undefined
 } | null
+
+// DI token for the chat thread service. Lives in common/ so that common modules
+// (eg cursorImportService) can inject it WITHOUT importing from browser/ — that
+// would create a common<->browser runtime cycle and break the desktop bundle
+// ordering (TypeError: decorator is not a function at workbench boot).
+export const IChatThreadService = createDecorator<IChatThreadServiceInterface>('brainChatThreadService');

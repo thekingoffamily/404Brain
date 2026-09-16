@@ -11,7 +11,9 @@ import { IChannel } from '../../../../base/parts/ipc/common/ipc.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 import { IWorkspaceContextService, IWorkspaceFolder } from '../../../../platform/workspace/common/workspace.js';
 import { generateUuid } from '../../../../base/common/uuid.js';
-import { IChatThreadService, ThreadType } from '../browser/chatThreadService.js';
+import { isWindows } from '../../../../base/common/platform.js';
+import { IChatThreadService } from './chatThreadServiceTypes.js';
+import type { IChatThreadService as IChatThreadServiceType, ThreadType } from '../browser/chatThreadService.js';
 import { ChatMessage } from './chatThreadServiceTypes.js';
 import { CursorImportReadResult, CursorImportScanResult, CursorImportedConversation } from './cursorImportServiceTypes.js';
 
@@ -45,7 +47,7 @@ class CursorImportService extends Disposable implements ICursorImportService {
 		@IMainProcessService private readonly mainProcessService: IMainProcessService,
 		@IWorkspaceContextService private readonly workspaceContextService: IWorkspaceContextService,
 		@IStorageService private readonly storageService: IStorageService,
-		@IChatThreadService private readonly chatThreadService: IChatThreadService,
+		@IChatThreadService private readonly chatThreadService: IChatThreadServiceType,
 	) {
 		super();
 		this.channel = this.mainProcessService.getChannel('brain-channel-cursorImport');
@@ -206,6 +208,6 @@ class CursorImportService extends Disposable implements ICursorImportService {
 	}
 }
 
-const pathSep = process.platform === 'win32' ? '\\' : '/';
+const pathSep = isWindows ? '\\' : '/';
 
 registerSingleton(ICursorImportService, CursorImportService, InstantiationType.Eager);

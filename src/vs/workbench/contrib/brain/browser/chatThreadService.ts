@@ -5,7 +5,6 @@
 
 import { Disposable } from '../../../../base/common/lifecycle.js';
 import { registerSingleton, InstantiationType } from '../../../../platform/instantiation/common/extensions.js';
-import { createDecorator } from '../../../../platform/instantiation/common/instantiation.js';
 import { IStorageService, StorageScope, StorageTarget } from '../../../../platform/storage/common/storage.js';
 
 import { URI } from '../../../../base/common/uri.js';
@@ -20,7 +19,7 @@ import { approvalTypeOfBuiltinToolName, BuiltinToolCallParams, ToolCallParams, T
 import { IToolsService } from './toolsService.js';
 import { CancellationToken } from '../../../../base/common/cancellation.js';
 import { ILanguageFeaturesService } from '../../../../editor/common/services/languageFeatures.js';
-import { BrainChatImage, ChatMessage, CheckpointEntry, CodespanLocationLink, StagingSelectionItem, ToolMessage } from '../common/chatThreadServiceTypes.js';
+import { BrainChatImage, ChatMessage, CheckpointEntry, CodespanLocationLink, IChatThreadService as IChatThreadServiceToken, StagingSelectionItem, ToolMessage } from '../common/chatThreadServiceTypes.js';
 import { Position } from '../../../../editor/common/core/position.js';
 import { IMetricsService } from '../common/metricsService.js';
 import { shorten } from '../../../../base/common/labels.js';
@@ -297,7 +296,7 @@ export interface IChatThreadService {
 	blurCurrentChat: () => Promise<void>
 }
 
-export const IChatThreadService = createDecorator<IChatThreadService>('brainChatThreadService');
+export const IChatThreadService = IChatThreadServiceToken;
 class ChatThreadService extends Disposable implements IChatThreadService {
 	_serviceBrand: undefined;
 
