@@ -137,14 +137,164 @@ export const defaultModelsOfProvider = {
 		// 'google/gemini-2.0-pro-exp-02-05:free',
 		// 'google/gemini-2.0-flash-exp:free',
 	],
-	aiTunnel: [ // https://aitunnel.ru/docs — OpenAI-compatible aggregator (RU, no VPN)
+	aiTunnel: [ // https://aitunnel.ru/docs — OpenAI-compatible aggregator (RU, no VPN); full catalog: https://api.aitunnel.ru/public/aitunnel/models/chat
+		// 'auto' first — intelligent routing (cheap CN model for simple tasks, pricier when thinking needed). DEFAULT.
 		'auto',
-		'deepseek-v4-pro',
+		// cheap Chinese models first (DeepSeek / Qwen / GLM / Kimi / MiniMax / Seed / Mimo)
 		'deepseek-v4-flash',
 		'deepseek-v4.1-flash',
-		'claude-sonnet-5',
-		'gpt-5.6-terra',
+		'deepseek-v4-flash-0731',
+		'deepseek-v4-flash-vision-exp',
+		'deepseek-v4-pro',
+		'deepseek-v4-pro-0813',
+		'deepseek-v3.2',
+		'deepseek-v3.2-exp',
+		'deepseek-chat-v3.1',
+		'deepseek-r1',
+		'deepseek-r1-0528',
+		// qwen
+		'qwen3.8-flash',
+		'qwen3.8-max',
+		'qwen3.8-max-0902',
+		'qwen3.8-27b',
+		'qwen3.7-max',
+		'qwen3.7-plus',
+		'qwen3.7-flash',
+		'qwen3.6-flash',
+		'qwen3.5-plus',
+		'qwen3-max',
+		'qwen3-coder',
+		'qwen3-coder-next',
+		'qwen3-coder-30b-a3b-instruct',
+		// z-ai (glm)
+		'glm-5.3',
 		'glm-5.3-flash',
+		'glm-5.2',
+		'glm-5.1',
+		'glm-5',
+		'glm-5-turbo',
+		'glm-4.7',
+		'glm-4.7-flash',
+		'glm-4.6',
+		// moonshot (kimi)
+		'kimi-k3',
+		'kimi-k2.7-code',
+		'kimi-k2.6',
+		'kimi-k2.5',
+		'kimi-k2-thinking',
+		'kimi-k2-0905',
+		// minimax
+		'minimax-m3',
+		'minimax-m2.7',
+		'minimax-m2.5',
+		'minimax-m2.1',
+		'minimax-m1',
+		'minimax-01',
+		// bytedance
+		'seed-2-1-turbo',
+		'seed-2.0-code',
+		// xiaomi
+		'mimo-v2.5-pro',
+		'mimo-v2.5',
+		// openai
+		'gpt-6-astra',
+		'gpt-6-astra-pro',
+		'gpt-5.6-sol',
+		'gpt-5.6-sol-pro',
+		'gpt-5.6-terra',
+		'gpt-5.6-terra-pro',
+		'gpt-5.6-luna',
+		'gpt-5.6-luna-pro',
+		'gpt-5.5',
+		'gpt-5.5-pro',
+		'gpt-5.4',
+		'gpt-5.4-pro',
+		'gpt-5.4-mini',
+		'gpt-5.4-nano',
+		'gpt-5.3-chat',
+		'gpt-5.3-codex',
+		'gpt-5.2',
+		'gpt-5.2-pro',
+		'gpt-5.2-chat',
+		'gpt-5.1',
+		'gpt-5.1-chat',
+		'gpt-5',
+		'gpt-5-pro',
+		'gpt-5-mini',
+		'gpt-5-nano',
+		'gpt-5-chat',
+		'gpt-4.1',
+		'gpt-4.1-mini',
+		'gpt-4.1-nano',
+		'gpt-4o',
+		'gpt-4o-mini',
+		'o3',
+		'o3-mini',
+		'o3-pro',
+		'o4-mini',
+		'o1',
+		'o1-pro',
+		'gpt-oss-120b',
+		'gpt-oss-20b',
+		// anthropic
+		'claude-opus-5',
+		'claude-opus-5-fast',
+		'claude-fable-5.1',
+		'claude-fable-5',
+		'claude-sonnet-5',
+		'claude-opus-4.8',
+		'claude-opus-4.8-fast',
+		'claude-opus-4.7',
+		'claude-opus-4.6',
+		'claude-opus-4.5',
+		'claude-sonnet-4.6',
+		'claude-sonnet-4.5',
+		'claude-sonnet-4',
+		'claude-haiku-4.5',
+		// google
+		'gemini-3.8-flash',
+		'gemini-3.7-flash',
+		'gemini-3.6-flash',
+		'gemini-3.5-flash',
+		'gemini-3.5-flash-lite',
+		'gemini-3.1-flash',
+		'gemini-3.1-flash-lite',
+		'gemini-3.1-pro-preview',
+		'gemini-3.1-pro-preview-customtools',
+		'gemini-2.5-pro',
+		'gemini-2.5-pro-preview',
+		'gemini-2.5-flash',
+		'gemini-2.5-flash-lite',
+		// x-ai
+		'grok-4.6',
+		'grok-4.5',
+		'grok-4.3',
+		'grok-4.20',
+		'grok-4.20-multi-agent',
+		'grok-build-0.1',
+		// mistral
+		'mistral-large-2512',
+		'mistral-medium-3-5',
+		'mistral-medium-3.1',
+		'mistral-small-2603',
+		'codestral-2508',
+		'mistral-nemo',
+		// meta llama
+		'llama-4-maverick',
+		'llama-4-scout',
+		'llama-3.3-70b-instruct',
+		// perplexity
+		'sonar',
+		'sonar-pro',
+		'sonar-reasoning-pro',
+		'sonar-deep-research',
+		// sber
+		'gigachat-2',
+		'gigachat-2-pro',
+		'gigachat-2-max',
+		// local / open
+		'gemma-4-26b-a4b-it',
+		'gemma-4-31b-it',
 	],
 	groq: [ // https://console.groq.com/docs/models
 		'qwen-qwq-32b',
@@ -427,6 +577,7 @@ const extensiveModelOptionsFallback: BrainStaticProviderInfo['modelOptionsFallba
 	}
 
 	if (lower.includes('gemini') && (lower.includes('2.5') || lower.includes('2-5'))) return toFallback(geminiModelOptions, 'gemini-2.5-pro-exp-03-25')
+	if (lower.includes('gemini')) return toFallback(geminiModelOptions, 'gemini-2.5-pro-exp-03-25')
 
 	if (lower.includes('claude-3-5') || lower.includes('claude-3.5')) return toFallback(anthropicModelOptions, 'claude-3-5-sonnet-20241022')
 	if (lower.includes('claude')) return toFallback(anthropicModelOptions, 'claude-3-7-sonnet-20250219')
@@ -474,6 +625,19 @@ const extensiveModelOptionsFallback: BrainStaticProviderInfo['modelOptionsFallba
 	if (lower.includes('o3') && lower.includes('mini')) return toFallback(openAIModelOptions, 'o3-mini')
 	if (lower.includes('o3')) return toFallback(openAIModelOptions, 'o3')
 	if (lower.includes('o4') && lower.includes('mini')) return toFallback(openAIModelOptions, 'o4-mini')
+
+	// newer families (routed through OpenAI-compat aggregators like aiTunnel) — treat any gpt-5/6/oss as a big-context openai model
+	if (lower.includes('gpt-6') || lower.includes('gpt-oss')) return toFallback(openAIModelOptions, 'gpt-4.1')
+	if (lower.includes('gpt-5')) return toFallback(openAIModelOptions, 'gpt-4.1')
+
+	if (lower.includes('glm')) return toFallback(openSourceModelOptions_assumingOAICompat, 'qwen3')
+	if (lower.includes('kimi')) return toFallback(openSourceModelOptions_assumingOAICompat, 'qwen3')
+	if (lower.includes('sonar')) return toFallback(openSourceModelOptions_assumingOAICompat, 'qwen3')
+	if (lower.includes('minimax')) return toFallback(openSourceModelOptions_assumingOAICompat, 'qwen3')
+	if (lower.includes('seed')) return toFallback(openSourceModelOptions_assumingOAICompat, 'qwen3')
+	if (lower.includes('mimo')) return toFallback(openSourceModelOptions_assumingOAICompat, 'qwen3')
+	if (lower.includes('gigachat')) return toFallback(openSourceModelOptions_assumingOAICompat, 'qwen3')
+	if (lower.includes('mistral')) return toFallback(openSourceModelOptions_assumingOAICompat, 'devstral')
 
 
 	if (Object.keys(openSourceModelOptions_assumingOAICompat).map(k => k.toLowerCase()).includes(lower))
@@ -1465,6 +1629,44 @@ const openRouterSettings: BrainStaticProviderInfo = {
 
 // ---------------- model settings of everything above ----------------
 
+// AITUNNEL — https://aitunnel.ru/docs OpenAI-compatible aggregator (RU, no VPN).
+// Unlike OpenRouter, EVERY model (incl. Claude/Gemini families) is served through the OpenAI-compatible API,
+// so we must never send anthropic/gemini-style tool formats. Also handles the 'auto' model slug
+// (intelligent routing: cheap model for simple tasks, pricier one when thinking is required).
+const aiTunnelSettings: BrainStaticProviderInfo = {
+	modelOptions: openRouterModelOptions_assumingOpenAICompat,
+	modelOptionsFallback: (modelName) => {
+		const lower = modelName.toLowerCase()
+
+		// 'auto' — aiTunnel picks the model itself based on task complexity and price/quality balance.
+		// We can't know the real context window / capabilities of the chosen model, so use safe
+		// OpenAI-compat defaults that keep the agent's system message and tool calls intact.
+		if (lower === 'auto') {
+			return {
+				recognizedModelName: 'auto',
+				modelName,
+				contextWindow: 200_000,
+				reservedOutputTokenSpace: 8_192,
+				cost: { input: 0, output: 0 }, // actual cost depends on the model aiTunnel picks
+				downloadable: false,
+				supportsFIM: false,
+				specialToolFormat: 'openai-style',
+				supportsSystemMessage: 'system-role',
+				reasoningCapabilities: false, // routing + thinking are decided server-side; don't send reasoning params that might be rejected
+			} as BrainStaticModelInfo & { modelName: string; recognizedModelName: string }
+		}
+
+		const res = extensiveModelOptionsFallback(modelName)
+		// AITUNNEL is strictly OpenAI-compatible — never emit native anthropic/gemini tool formats
+		if (res?.specialToolFormat && res.specialToolFormat !== 'openai-style') {
+			res.specialToolFormat = 'openai-style'
+		}
+		return res
+	},
+	providerReasoningIOSettings: openRouterSettings.providerReasoningIOSettings,
+}
+
+
 const modelSettingsOfProvider: { [providerName in ProviderName]: BrainStaticProviderInfo } = {
 	openAI: openAISettings,
 	anthropic: anthropicSettings,
@@ -1477,7 +1679,7 @@ const modelSettingsOfProvider: { [providerName in ProviderName]: BrainStaticProv
 
 	// open source models + providers (mixture of everything)
 	openRouter: openRouterSettings,
-	aiTunnel: openRouterSettings, // same OpenAI-compat + reasoning fallbacks as OpenRouter
+	aiTunnel: aiTunnelSettings, // OpenAI-compat for ALL models; 'auto' = server-side cost/smart routing
 	vLLM: vLLMSettings,
 	ollama: ollamaSettings,
 	openAICompatible: openaiCompatible,

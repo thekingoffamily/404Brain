@@ -249,12 +249,13 @@ const defaultCustomSettings: Record<CustomSettingName, undefined> = {
 }
 
 
-const modelInfoOfDefaultModelNames = (defaultModelNames: string[]): { models: BrainStatefulModelInfo[] } => {
+const modelInfoOfDefaultModelNames = (defaultModelNames: string[], alwaysVisibleWhenLong?: string[]): { models: BrainStatefulModelInfo[] } => {
+	const alwaysVisible = new Set(alwaysVisibleWhenLong ?? [])
 	return {
 		models: defaultModelNames.map((modelName, i) => ({
 			modelName,
 			type: 'default',
-			isHidden: defaultModelNames.length >= 10, // hide all models if there are a ton of them, and make user enable them individually
+			isHidden: defaultModelNames.length >= 10 && !alwaysVisible.has(modelName), // hide all models if there are a ton of them, except the always-visible few, and let user enable the rest individually
 		}))
 	}
 }
@@ -324,7 +325,15 @@ export const defaultSettingsOfProvider: SettingsOfProvider = {
 	aiTunnel: { // AITUNNEL aggregator — https://aitunnel.ru/docs
 		...defaultCustomSettings,
 		...defaultProviderSettings.aiTunnel,
-		...modelInfoOfDefaultModelNames(defaultModelsOfProvider.aiTunnel),
+		...modelInfoOfDefaultModelNames(defaultModelsOfProvider.aiTunnel, [
+			// visible by default: 'auto' (smart cost routing) + top cheap Chinese models
+			'auto',
+			'deepseek-v4-flash',
+			'qwen3.8-flash',
+			'glm-5.3-flash',
+			'kimi-k2.6',
+			'minimax-m2.5',
+		]),
 		_didFillInProviderSettings: undefined,
 	},
 	openAICompatible: { // aggregator (serves models from multiple providers)

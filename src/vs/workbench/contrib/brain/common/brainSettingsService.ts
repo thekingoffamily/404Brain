@@ -84,15 +84,16 @@ export interface IBrainSettingsService {
 
 
 
-const _modelsWithSwappedInNewModels = (options: { existingModels: BrainStatefulModelInfo[], models: string[], type: 'autodetected' | 'default' }) => {
-	const { existingModels, models, type } = options
+const _modelsWithSwappedInNewModels = (options: { existingModels: BrainStatefulModelInfo[], models: string[], type: 'autodetected' | 'default', defaultIsHiddenByModelName: Record<string, boolean> }) => {
+	const { existingModels, models, type, defaultIsHiddenByModelName } = options
 
 	const existingModelsMap: Record<string, BrainStatefulModelInfo> = {}
 	for (const existingModel of existingModels) {
 		existingModelsMap[existingModel.modelName] = existingModel
 	}
 
-	const newDefaultModels = models.map((modelName, i) => ({ modelName, type, isHidden: !!existingModelsMap[modelName]?.isHidden, }))
+	// keep the user's existing hide/show choice where possible; for brand-new models use their default visibility
+	const newDefaultModels = models.map((modelName, i) => ({ modelName, type, isHidden: existingModelsMap[modelName]?.isHidden ?? (defaultIsHiddenByModelName[modelName] ?? false), }))
 
 	return [
 		...newDefaultModels, // swap out all the models of this type for the new models of this type
@@ -128,7 +129,9 @@ const _stateWithMergedDefaultModels = (state: BrainSettingsState): BrainSettings
 		const defaultModels = defaultSettingsOfProvider[providerName]?.models ?? []
 		const currentModels = newSettingsOfProvider[providerName]?.models ?? []
 		const defaultModelNames = defaultModels.map(m => m.modelName)
-		const newModels = _modelsWithSwappedInNewModels({ existingModels: currentModels, models: defaultModelNames, type: 'default' })
+		const defaultIsHiddenByModelName: Record<string, boolean> = {}
+		for (const m of defaultModels) defaultIsHiddenByModelName[m.modelName] = m.isHidden
+		const newModels = _modelsWithSwappedInNewModels({ existingModels: currentModels, models: defaultModelNames, type: 'default', defaultIsHiddenByModelName })
 		newSettingsOfProvider = {
 			...newSettingsOfProvider,
 			[providerName]: {
@@ -504,7 +507,7 @@ class BrainSettingsService extends Disposable implements IBrainSettingsService {
 		const { models } = this.state.settingsOfProvider[providerName]
 		const oldModelNames = models.map(m => m.modelName)
 
-		const newModels = _modelsWithSwappedInNewModels({ existingModels: models, models: autodetectedModelNames, type: 'autodetected' })
+		const newModels = _modelsWithSwappedInNewModels({ existingModels: models, models: autodetectedModelNames, type: 'autodetected', defaultIsHiddenByModelName: {} })
 		this.setSettingOfProvider(providerName, 'models', newModels)
 
 		// if the models changed, log it
