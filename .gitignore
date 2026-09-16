@@ -43,6 +43,9 @@ articles/
 .windsurf/
 .idea/
 .vs/
+# Brain UI kit ships its skills under .claude/skills — keep them
+!extensions/brain-uikit/ux-ui/.claude/
+!extensions/brain-uikit/ux-ui/.claude/**
 *.code-workspace
 *.local.md
 *.local.json

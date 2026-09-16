@@ -169,8 +169,17 @@ browser/react/src/
    - Кейс: алиас `144` в `~/.ssh/config` был битый (`Host 144<мусор>!`) — поправлен.
 3. **Дефолтные умения (Agent Skills)**: блок `<default_skills>` в `prompts.ts` (code-review, debugging,
    test-writing, refactoring, git-workflow, codebase-onboarding, security-review, performance-analysis,
-   api-integration, documentation-writing). Формат agentskills.io (name + when + how).
-4. `brainVersion` → 1.7.1, `brainRelease` → 0050.
+   api-integration, documentation-writing, ui_design, ux-ui-kit). Формат agentskills.io (name + when + how).
+   В `<always_analyze>` добавлен ReAct-цикл (analyze→plan→act→observe→correct→answer) с честностью про
+   непроверенные числа/факты.
+4. **UI/UX-кит (plugin87/ux-ui-agent-skills, v2.8.0)**: пакуется как локальное расширение
+   `extensions/brain-uikit/` (extensionKind `["workspace","ui"]` → попадает и в desktop, и в REH-сервер),
+   содержимое — trimmed копия кита в `ux-ui/` (~2.1 МБ: `.claude/skills` 19 шт + `rules/`, `design-systems/`
+   138 шт, `tokens/`, `components/`, `accessibility/`, `workflows/`, `CLAUDE.md` и т.д.; исключены `examples/`
+   ~3.6 МБ, `tests/`, `evals/`, `.github/`, `scripts/`).
+   Агент находит кит по пути `<appRoot>/extensions/brain-uikit/ux-ui/` (скиллы `ui_design`/`ux-ui-kit` в
+   системном промпте; `read_file` работает по абсолютным путям вне воркспейса через `brainModelService`).
+5. `brainVersion` → 1.7.1, `brainRelease` → 0050.
 
 ### Прошлые сессии
 

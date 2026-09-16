@@ -59,17 +59,34 @@
 
 ## Дефолтные умения (Agent Skills, v1.7.1)
 
-Блок `<default_skills>` в системном промпте всегда доступен (формат Agent Skills — name + when + how),
+Блок `<default_skills>` в системном промпте всегда доступен (формат Agent Skills — name + when + how,
+см. agentskills.io — progressive disclosure: дискавери по name/description, активация чтением, исполнение),
 агент применяет нужное умение по задаче:
 `code-review`, `debugging`, `test-writing`, `refactoring`, `git-workflow`, `codebase-onboarding`,
 `security-review`, `performance-analysis`, `api-integration`, `documentation-writing`.
 Каждое содержит краткий регламент (прочитать дифф и файлы → найти причину/минимум → изменить →
 проверить той же командой). Полный текст — в `common/prompt/prompts.ts`.
 
+Дополнительно (v1.7.1):
+- `ui_design` — «Senior Design Architect»: при любой работе с UI/UX (экраны, компоненты, диалоги, темы,
+  токены). Доктрина: порядок решений (user needs → accessibility WCAG 2.2/POUR → consistency →
+  aesthetics → DX), пять non-negotiables (token by intent — красный Delete, одна тема/один источник правды,
+  8 состояний интерактив-элемента, «one thing leads» — один фокус на экран, полнота вывода),
+  типографика (4px ритм, ~65ch), верификация (никогда не называть число, которое не измерил;
+  проверять все состояния; рендерить и смотреть). Zero emoji.
+- `ux-ui-kit` — чтение полного кита при необходимости глубины (138 design systems, токены, компоненты,
+  accessibility, фреймворки, workflows). Кит поставляется как локальное расширение
+  `extensions/brain-uikit/` (extensionKind workspace+ui → попадает и в desktop, и в REH):
+  `<appRoot>/extensions/brain-uikit/ux-ui/` c `CLAUDE.md` (роутер запросов) и `.claude/skills/*/SKILL.md`.
+
+В `<always_analyze>` добавлен явный ReAct-цикл (analyze → plan → act → observe → correct → answer,
+честность про неуверенность, «не выдумывать факты/цифры», «не заявлять непроверенные числа»).
+
 ## Правила работы агента (в системном промпте)
 
 - **Всегда анализировать** (`<always_analyze>`): думать до ответа/действия, проверять факты тулзами,
-  перечитывать изменённый код, валидировать результат (lint), не предполагать содержимое файлов.
+  перечитывать изменённый код, валидировать результат (lint), не предполагать содержимое файлов;
+  ReAct-цикл анализа/действия/наблюдения/коррекции.
 - **Агент-регламенты** (`agentSpecs`): статус-апдейты до батчей тулзов, резюме в конце,
   один тулз за раз, чтение файлов целиком перед большими правками, верификация после правок,
   цитирование кода в формате `startLine:endLine:/full/absolute/path`.

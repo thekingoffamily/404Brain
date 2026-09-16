@@ -1,0 +1,9 @@
+{
+	"name": "brain-uikit",
+	"displayName": "Brain UI/UX Design Kit",
+	"description": "Senior Design Architect UI/UX skill kit (ux-ui-agent-skills v2.8.0)",
+	"version": "2.8.0",
+	"engines": { "vscode": "^1.99.1" },
+	"extensionKind": ["workspace", "ui"],
+	"categories": ["Other"]
+}
