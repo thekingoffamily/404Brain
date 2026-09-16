@@ -173,12 +173,16 @@ browser/react/src/
    В `<always_analyze>` добавлен ReAct-цикл (analyze→plan→act→observe→correct→answer) с честностью про
    непроверенные числа/факты.
 4. **UI/UX-кит (plugin87/ux-ui-agent-skills, v2.8.0)**: пакуется как локальное расширение
-   `extensions/brain-uikit/` (extensionKind `["workspace","ui"]` → попадает и в desktop, и в REH-сервер),
-   содержимое — trimmed копия кита в `ux-ui/` (~2.1 МБ: `.claude/skills` 19 шт + `rules/`, `design-systems/`
-   138 шт, `tokens/`, `components/`, `accessibility/`, `workflows/`, `CLAUDE.md` и т.д.; исключены `examples/`
-   ~3.6 МБ, `tests/`, `evals/`, `.github/`, `scripts/`).
-   Агент находит кит по пути `<appRoot>/extensions/brain-uikit/ux-ui/` (скиллы `ui_design`/`ux-ui-kit` в
-   системном промпте; `read_file` работает по абсолютным путям вне воркспейса через `brainModelService`).
+   `extensions/brain-uikit/` (extensionKind `["workspace","ui"]`), содержимое — trimmed копия кита в `ux-ui/`
+   (~2.1 МБ: `.claude/skills` 19 шт + `rules/`, `design-systems/` 138 шт, `tokens/`, `components/`,
+   `accessibility/`, `workflows/`, `CLAUDE.md` и т.д.; исключены `examples/` ~3.6 МБ, `tests/`, `evals/`,
+   `.github/`, `scripts/`).
+   Кит попадает в desktop-продукт (проверено в билде: commit 20515a28, desktop 1.7.1).
+   ⚠️ Кейс: в REH-сборку НЕ попадает — `gulpfile.reh.js` (`isUIExtension`, switch по `extensionKind`,
+   массив `["workspace","ui"]` уходит в default → considered UI → отфильтрован). Для агента не критично:
+   агент живёт в клиентском рендерере и читает файлы кита из локального `<appRoot>/extensions/brain-uikit/ux-ui/`
+   (`read_file` ходит в `brainModelService`, работает с любым абсолютным путём вне воркспейса).
+   Если когда-то понадобится кит на сервере — поставить `"extensionKind": "workspace"` (строкой).
 5. `brainVersion` → 1.7.1, `brainRelease` → 0050.
 
 ### Прошлые сессии
