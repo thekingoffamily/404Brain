@@ -163,6 +163,18 @@ browser/react/src/
 5. Кейс: два параллельных gulp-сборщика (`vscode-reh-linux-x64` + случайно запущенный второй)
    конкурируют за `out-build` и растягивают compile-src с ~10 мин до 90+ мин — запускать сборки строго по одной.
 
+### Постфикс сессии 1.9.0 — фикс REH-тара (клиент не подключался по SSH)
+Симптом: после релиза 1.7.2 Remote-SSH на `.144` падал с `Couldn't install vscode server on remote server,
+install script returned non-zero exit status`, в логе сервера `bin/404brain-server: Permission denied`.
+
+Кейс (ВАЖНО): **Windows `tar -czf` НЕ сохраняет exec-биты** (всё кладёт `-rw-rw-rw-`). Первую заливку
+REH-тара в release 1.99.3 сделали через системный tar → на удалённом сервере и `bin/404brain-server`,
+и бинарь `node` распаковались без `+x` → сервер не запускается. В старом таре (1.7.1) биты были
+(`-rwxr-xr-x`, 1559 файлов) — он собирался иначе (через WSL).
+Рецепт правильного тара под Windows: `wsl -e bash -lc "cp -r <folder> ~/ && chmod +x bin/* bin/remote-cli/* bin/helpers/*.sh; tar -czf ..."` —
+на ext4 биты сохраняются. Проверка: `tar -tvf | grep 404brain-server` должен показать `-rwxr-xr-x`.
+Фикс уже залит clobber в release 1.99.3 (58.0 МБ, commit `3efe08f1`); на `.144` переразвернуто вручную и проверено (`--help` → «404Brain 1.99.3»).
+
 ### сессия 1.8.0 (завершена)
 Состояние: **релиз v1.7.1 выпущен** (404Brain-win32-x64-1.7.1.zip, tag v1.7.1; REH-сервер обновлён в release `1.99.3`).
 
