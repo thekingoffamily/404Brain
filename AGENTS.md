@@ -93,7 +93,7 @@ common/                         — сервисы, но доступные и �
   brainSettingsService.ts       — настройки и провайдеры (глобальные настройки + per-provider)
   brainSettingsTypes.ts         — типы настроек, инфа о провайдерах/фичах
   cursorImportService.ts / cursorImportServiceTypes.ts — клиентский сервис импорта из Cursor (канал brain-channel-cursorImport)
-  chatThreadServiceTypes.ts     — типы сообщений (ChatMessage, BrainChatImage, ToolMessage...)
+  chatThreadServiceTypes.ts     — типы сообщений (ChatMessage, BrainChatImage, ToolMessage...) + DI-токен IChatThreadService
   sendLLMMessageTypes.ts        — типы сообщений LLM (OpenAI/Anthropic/Gemini форматы)
   sendLLMMessageService.ts      — отправка и стриминг к провайдерам
   mcpService.ts / mcpServiceTypes.ts — MCP серверы (конфиг-файл, серверы, тулы)
@@ -107,6 +107,18 @@ browser/react/src/
   util/inputs.tsx               — BrainInputBox2, кнопки, слайдеры, дропдауны
   util/services.tsx             — react-обёртки над VS Code сервисами (useAccessor и т.д.)
 ```
+
+### ⚠️ Правило слоёв common ↔ browser (иначе серый экран при старте!)
+- **common модули НЕ могут runtime-импортировать НИЧЕГО из browser/** (разрешён только `import type`).
+  Иначе esbuild (бандл `workbench.desktop.main.js`) получает цикл common↔browser и кладёт модуль
+  browser ПОСЛЕ его использования → токен = `undefined` → `TypeError: decorator is not a function`
+  при загрузке workbench (серое окно).
+- DI-токены (createDecorator) клади в `common/` (например `IChatThreadService` — в `chatThreadServiceTypes.ts`),
+  browser-реализация делает `export const IChatThreadService = IChatThreadServiceToken` (ре-экспорт).
+- Диагностика краша: grep в `workbench.desktop.main.js` — если `createDecorator("...")` объявлен строкой ПОЗЖЕ,
+  чем `__param(N, ...)` его использует — это тот самый цикл.
+- Второй сценарий серого экрана: `process.platform/env/...` в common/browser-модуле — sandbox-рендерер
+  НЕ имеет `process` (ReferenceError). Используй `isWindows` из `base/common/platform.js` и т.п.
 
 ### Ключевые сервисы из React (`useAccessor`)
 `IFileService`, `IWorkspaceContextService`, `ICommandService`, `INotificationService`, `IBrainModelService`,
@@ -172,6 +184,19 @@ browser/react/src/
    `404Brain-win32-x64-1.7.0.zip`. Кейс: package.json расширений с UTF-8 BOM роняет этап
    `bundle-non-native-extensions-build` — сохранённые PowerShell JSON пишем без BOM (см. docs/build-and-run.md).
 8. Релиз `v1.7.0` (коммит `cac33bf1`).
+9. **Фикс boot-краша (серый экран)** после релиза (коммит `238607b3`):
+   - Краш 1: `TypeError: decorator is not a function` — цикл common↔browser: `common/cursorImportService.ts`
+     импортировал токен `IChatThreadService` из `browser/chatThreadService.ts`; esbuild клал браузерный модуль
+     ПОСЛЕ использования → токен `undefined` в `__param(3, ...)`. Фикс: токен перенесён в
+     `common/chatThreadServiceTypes.ts` (`createDecorator('brainChatThreadService')`), browser ре-экспортирует.
+   - Краш 2: `ReferenceError: process is not defined` — `const pathSep = process.platform === 'win32'` в том же
+     файле; sandbox-рендерер без `process`. Фикс: `isWindows` из `base/common/platform.js`.
+   - Проверка: `decode`: токен в бандле объявлен ДО `CursorImportService = __decorate([...])`; изолированная
+     сессия (`--user-data-dir=новый`) стабильна 4+ мин, лог чист.
+   - Кейс remote: если последняя сессия была ssh-remote, при старте клиент 404Brain восстанавливает remote-окно и
+     получает `version mismatch` (сервер на удалённой машине должен быть такой же сборки/commit). Это НЕ баг
+     клиента — отрендерить remote нельзя, пока сервер не обновлён. Урок: локальный клиент и удалённый сервер
+     (REH) должны собираться из одного коммита.
 
 ### сессия 1.6.2 (завершена)
 Состояние: **релиз v1.6.2 выпущен** (404Brain-win32-x64-1.6.2.zip, tag v1.6.2)

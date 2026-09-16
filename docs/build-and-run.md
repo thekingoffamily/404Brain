@@ -45,3 +45,19 @@ npm run gulp vscode-win32-x64
 - НЕ сохранять package.json расширений из PowerShell в UTF-8 с BOM: этап `bundle-non-native-extensions-build`
   падает с `Error parsing 'package.json' manifest file: not a valid JSON file` (vsce не понимает BOM).
   Поведение `-Encoding UTF8` в Windows PowerShell 5.1 пишет BOM; править JSON лучше так, чтобы оставался UTF-8 без BOM.
+
+## Диагностика запуска (серый экран / краш при старте)
+- Разбор приложения: `<сборка>\\resources\\app\\out\\vs\\workbench\\workbench.desktop.main.js`.
+- Логи сессии: `%APPDATA%\\404Brain\\logs\\<session>\\window1\\renderer.log` и `...\\main.log`.
+  Краши/дампы: `%APPDATA%\\404Brain\\Crashpad\\`.
+- **`TypeError: decorator is not a function`** = цикл common↔browser (см. правило в AGENTS.md):
+  DI-токен `createDecorator(...)` оказался в бандле ПОСЛЕ `X = __decorate([__param(N, токен)])` → токен `undefined`.
+  Грепни `workbench.desktop.main.js` по имени токена: номер строки `var X = createDecorator(...)` ДОЛЖЕН быть
+  меньше номера строки `X = __decorate`. Класть токены в common, browser ре-экспортирует. Устранить цикл — пересобрать.
+- **`ReferenceError: process is not defined`** — `process.*` на уровне модуля common/browser: sandbox-рендерер
+  не имеет глобального `process`. Заменять на платформенные хелперы (`isWindows` из `base/common/platform.js` и т.п.).
+- **`Connection error: ... version mismatch`** при старте = восстанавливается ssh-remote окно, а сервер на
+  удалённой машине собран из другого коммита/версии. Локальный клиент и удалённый REH-сервер
+  должны собираться из одного коммита — иначе remote окно не отрисуется (НЕ баг клиента, лог чистый).
+- Изолированная проверка сборки без профиля: `404Brain.exe --user-data-dir=<новая пустая папка>` — если стартует
+  стабильно, проблема в старых данных/remote-восстановлении, а не в билде.
