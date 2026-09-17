@@ -16,7 +16,7 @@ import { MAX_CHILDREN_URIs_PAGE, MAX_DIRSTR_CHARS_TOTAL_BEGINNING, MAX_DIRSTR_CH
 const MAX_FILES_TOTAL = 1000;
 
 
-const START_MAX_DEPTH = Infinity;
+const START_MAX_DEPTH = 6; // cap the first pass so the tree (esp. on huge workspaces) is computed fast
 const START_MAX_ITEMS_PER_DIR = Infinity; // Add start value as Infinity
 
 const DEFAULT_MAX_DEPTH = 3;

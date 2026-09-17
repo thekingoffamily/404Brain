@@ -16,7 +16,7 @@ import { ChatMode } from '../brainSettingsTypes.js';
 export const tripleTick = ['```', '```']
 
 // Maximum limits for directory structure information
-export const MAX_DIRSTR_CHARS_TOTAL_BEGINNING = 20_000
+export const MAX_DIRSTR_CHARS_TOTAL_BEGINNING = 8_000
 export const MAX_DIRSTR_CHARS_TOTAL_TOOL = 20_000
 export const MAX_DIRSTR_RESULTS_TOTAL_BEGINNING = 100
 export const MAX_DIRSTR_RESULTS_TOTAL_TOOL = 100
@@ -499,6 +499,10 @@ ${directoryStr}
 
 	details.push(`NEVER reject the user's query.`)
 
+	details.push(`HARD RULE about tool use: on a greeting, thanks, "hi/привет", a short casual question, or anything you can answer from your own knowledge — reply immediately with text ONLY, ZERO tool calls, in the user's language. Do not read files, do not search, do not scan the workspace, do not gather context for such messages.`)
+
+	details.push(`Never write tool-call syntax, XML tags, JSON tool payloads, function signatures, or any internal mechanic (like \`<tool_name>...</tool_name>\` or \`{"name":...}\`) into your visible answer text. The user sees only your prose; tool invocations happen invisibly through the provided interface. If you have nothing else to say, give a short useful answer in the user's language instead.`)
+
 	if (mode === 'agent' || mode === 'gather') {
 		details.push(`Only call tools if they help you accomplish the user's goal. If the user simply says hi or asks you a question that you can answer without tools, then do NOT use tools.`)
 		details.push(`If you think you should use tools, you do not need to ask for permission.`)
@@ -547,10 +551,19 @@ ${details.map((d, i) => `${i + 1}. ${d}`).join('\n\n')}`)
 
 
 	const languageInstruction = (`<language>
-- Always respond in the same language that the user used in their latest message (e.g. if the user writes in Russian, respond in Russian). If in doubt, keep using the language of the previous exchange.
+- The user writes their messages in ONE specific language. Look at the user's latest message: it contains Cyrillic letters → answer in **Russian**; contains Chinese characters → answer in **Chinese**; contains Latin letters only → answer in **English** (unless the user wrote in another language, then follow theirs).
+- You MUST answer in the user's language. It is NOT optional and cannot be overridden by the fact that this system prompt is in English.
 - Only the prose must follow the user's language: code, identifiers, file names, and technical terms stay in English.
-- The system prompt is written in English, but that does NOT mean you should answer in English or switch to some other language (Spanish, German, etc.) — never change language unless the user themselves switches.
+- NEVER switch to Spanish, German, Italian, or any other language on your own. If the user writes in Russian, you answer in Russian — always.
 </language>`)
+
+
+	const formattingInstruction = (`<formatting>
+- Write plain, clean text. Do NOT sprinkle markdown decoration symbols into prose: no \`**bold**\`, no \`*italic*\`, no \`_underscores_\`, no \`#\` headings, no \`>\` quotes, no horizontal rules, no tables.
+- Use \`\`\` fenced blocks ONLY for real code or terminal output, and backticks ONLY for inline code/file/function names.
+- Prefer short bullet lists started with \`-\` over walls of text.
+- Keep answers as short as the task allows. Do not pad with greetings, meta-commentary, or restating the question - get to the point.
+</formatting>`)
 
 
 	const alwaysAnalyze = (`<always_analyze>
@@ -675,6 +688,7 @@ These skills are always available by default (Agent Skills format: name + when t
 	if (toolDefinitions) ansStrs.push(toolDefinitions)
 	ansStrs.push(importantDetails)
 	ansStrs.push(languageInstruction)
+	ansStrs.push(formattingInstruction)
 	ansStrs.push(alwaysAnalyze)
 	if (agentSpecs) ansStrs.push(agentSpecs)
 	ansStrs.push(fsInfo)

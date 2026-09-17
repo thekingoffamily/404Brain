@@ -1758,8 +1758,8 @@ export const getIsReasoningEnabledState = (
 	const { supportsReasoning, canTurnOffReasoning } = getModelCapabilities(providerName, modelName, overridesOfModel).reasoningCapabilities || {}
 	if (!supportsReasoning) return false
 
-	// default to enabled if can't turn off, or if the featureName is Chat.
-	const defaultEnabledVal = featureName === 'Chat' || !canTurnOffReasoning
+	// default to enabled only if the model can't turn it off (reasoning ON by default makes every chat/agent reply slower)
+	const defaultEnabledVal = !canTurnOffReasoning
 
 	const isReasoningEnabled = modelSelectionOptions?.reasoningEnabled ?? defaultEnabledVal
 	return isReasoningEnabled

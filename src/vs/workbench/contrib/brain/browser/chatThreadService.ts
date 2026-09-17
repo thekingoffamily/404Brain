@@ -13,7 +13,7 @@ import { ILLMMessageService } from '../common/sendLLMMessageService.js';
 import { chat_userMessageContent, isABuiltinToolName } from '../common/prompt/prompts.js';
 import { AnthropicReasoning, getErrorMessage, RawToolCallObj, RawToolParamsObj } from '../common/sendLLMMessageTypes.js';
 import { generateUuid } from '../../../../base/common/uuid.js';
-import { FeatureName, ModelSelection, ModelSelectionOptions } from '../common/brainSettingsTypes.js';
+import { ChatMode, FeatureName, ModelSelection, ModelSelectionOptions } from '../common/brainSettingsTypes.js';
 import { IBrainSettingsService } from '../common/brainSettingsService.js';
 import { approvalTypeOfBuiltinToolName, BuiltinToolCallParams, ToolCallParams, ToolName, ToolResult } from '../common/toolsServiceTypes.js';
 import { IToolsService } from './toolsService.js';
@@ -745,12 +745,14 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		modelSelection,
 		modelSelectionOptions,
 		callThisToolFirst,
+		chatModeOverride,
 	}: {
 		threadId: string,
 		modelSelection: ModelSelection | null,
 		modelSelectionOptions: ModelSelectionOptions | undefined,
 
-		callThisToolFirst?: ToolMessage<ToolName> & { type: 'tool_request' }
+		callThisToolFirst?: ToolMessage<ToolName> & { type: 'tool_request' },
+		chatModeOverride?: ChatMode
 	}) {
 
 
@@ -759,7 +761,7 @@ class ChatThreadService extends Disposable implements IChatThreadService {
 		// _runToolCall does not need setStreamState({idle}) before it, but it needs it after it. (handles its own setStreamState)
 
 		// above just defines helpers, below starts the actual function
-		const { chatMode } = this._settingsService.state.globalSettings // should not change as we loop even if user changes it, so it goes here
+		const chatMode = chatModeOverride ?? this._settingsService.state.globalSettings.chatMode // should not change as we loop even if user changes it, so it goes here
 		const { overridesOfModel } = this._settingsService.state
 
 		let nMessagesSent = 0
@@ -1242,6 +1244,14 @@ We only need to do it for files that were edited since `from`, ie files between 
 	}
 
 
+	private _isSimpleOpenerMessage(text: string): boolean {
+		// single-line, short human opener — the model must answer immediately with text, no tools
+		if (!text || text.length > 80 || text.includes('\n')) return false
+		const t = text.trim().toLowerCase()
+		return /^(привет|прив(ик|ет|етик)|здравствуй(те)?|здрасте|здорово|здаров|здарова|салют|хай|хало|хеллоу?|hello|hi|hey|yo|hiya|ку|йо|охаё|guten tag|hola|good morning|good afternoon|good evening|good day|what'?s up|wassup|sup|how are you( doing)?|how'?s it going|howdo|hello there|как дела(шки)?|как ты( там)?|как настроение|как жизнь|чем занимаешься|ты тут|есть кто( нибудь)?|ау|ты на связи|приветствую)\W*[?!.]?\s*$/i.test(t)
+	}
+
+
 	private async _addUserMessageAndStreamResponse({ userMessage, _chatSelections, images, threadId }: { userMessage: string, _chatSelections?: StagingSelectionItem[], images?: BrainChatImage[] | null, threadId: string }) {
 		const thread = this.state.allThreads[threadId]
 		if (!thread) return // should never happen
@@ -1252,6 +1262,7 @@ We only need to do it for files that were edited since `from`, ie files between 
 		}
 
 		// add dummy before this message to keep checkpoint before user message idea consistent
+		const wasEmptyThread = thread.messages.length === 0
 		if (thread.messages.length === 0) {
 			this._addUserCheckpoint({ threadId })
 		}
@@ -1268,7 +1279,13 @@ We only need to do it for files that were edited since `from`, ie files between 
 		this._setThreadState(threadId, { currCheckpointIdx: null }) // no longer at a checkpoint because started streaming
 
 		this._wrapRunAgentToNotify(
-			this._runChatAgent({ threadId, ...this._currentModelSelectionProps(), }),
+			this._runChatAgent({
+				threadId,
+				...this._currentModelSelectionProps(),
+				// engine-level guard: a pure greeting/casual opener on a fresh thread gets a plain
+				// chat turn (no tools, no scanning) so the model can't waste time with pm2 list etc.
+				chatModeOverride: wasEmptyThread && this._isSimpleOpenerMessage(instructions) ? 'normal' : undefined,
+			}),
 			threadId,
 		)
 

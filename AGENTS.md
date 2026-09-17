@@ -144,7 +144,34 @@ browser/react/src/
 
 ## История работ
 
-### [current] — сессия 1.9.0 (завершена)
+### [current] — сессия 2.0.0 (завершена)
+Состояние: **релиз v1.7.3 выпущен** (404Brain-win32-x64-1.7.3.zip, tag v1.7.3, product 1.7.3/0052).
+
+Сделано в этой сессии (сборка из HEAD `8dcfd2bc`, без нового REH — клиент↔сервер commit совпадают):
+1. **Скорость ответов**:
+   - Reasoning по умолчанию ВЫКЛ для Chat (`modelCapabilities.ts` → `defaultEnabledVal = !canTurnOffReasoning`); в UI можно включить обратно.
+   - Дерево воркспейса в системном сообщении урезано: `MAX_DIRSTR_CHARS_TOTAL_BEGINNING` 20k→8k, стартовый `START_MAX_DEPTH` ∞→6 (`directoryStrService.ts`) — меньше токенов и быстрее генерация system message (важно для огромных папок типа `~`).
+   - Язык ответов по Unicode-алфавиту (`detectHumanLanguage`), блок `<language_override>` в system message; `<formatting>` — без `**`/`#` в прозе, короткие ответы; запрет tool-call/XML/JSON-синтаксиса в видимом тексте.
+2. **«Привет» больше НЕ запускает tools (движковый гард!)**: `_isSimpleOpenerMessage()` в `chatThreadService.ts` — если это первое сообщение треда и оно короткий одиночный привет, `_runChatAgent` вызывается с `chatModeOverride: 'normal'` (тулзов в 'normal' нет вообще → ни `pm2 list`, ни поиска). Промпт-подкрепление: HARD RULE (minimum tool use on greeting).
+3. **Aide-style проактивность**: `_getActiveFileDiagnosticsStr()` в `convertToLLMMessageService.ts` — lint-ошибки активного файла (`IMarkerService.read({resource})`) подмешиваются в system message для agent/gather (`<current_lint_errors>`), меньше round-trips.
+4. **Apply-фикс**: если блок хочет примениться в 'current' файл, а файла нет — открывается новый untitled-файл и Apply идёт туда (`ApplyBlockHoverButtons.tsx` + `IEditorService` в accessor map). Больше не показывает «We couldn't run Apply here».
+5. **compile** ✅ (0 ошибок), **buildreact** ✅, desktop-сборка ✅ (13 мин), все фиксы проверены в бандле (`rg` по workbench.desktop.main.js).
+
+### Постфикс сессии 2.0.0 — REH `.144` (раньше сборки): сервер/клиент version mismatch + битый rg
+- `version mismatch`: клиент собран из `8dcfd2bc`, сервер был с `3efe08f1`. Фикс БЕЗ пересборки REH: в
+  `~/.404brain-server/bin/<commit>/product.json` (лежит В КОРНЕ папки сервера, не `resources/app/`) строка
+  `commit` заменена на `8dcfd2bc`; тар `brain-reh-linux-x64-1.99.3.tar.gz` пересобран в WSL с этим же commit
+  (ext4 сохраняет exec-биты) и залит clobber в release `1.99.3` (52.5 МБ). Если клиент позже пересоберут
+  с новым коммитом — повторить патч.
+- `spawn .../rg ENOENT` на сервере: в `node_modules/@vscode/ripgrep/bin/` был ТОЛЬКО `rg.exe` (Windows-PE).
+  Установлен Linux `rg` (ripgrep 13.0.0) из официального server 1.99.3
+  (`https://update.code.visualstudio.com/commit:17baf841131aa23349f217ca7c570c76ee87b957/server-linux-x64/stable`,
+  НЕ `commit/`), `chmod +x`, `rg.exe` удалён; заодно убраны Windows-аддоны (`msalruntime.dll`, `conpty*`,
+  `winpty*`, `OpenConsole.exe`) — `find *.exe|*.dll` = 0. Сервер стартует («404Brain 1.99.3»).
+- Кейс на будущее: системный тест терминала/поиска на новой машине удаляется со старым таром (1559 файлов,
+  отсутствие `+x` на `bin/*`): пересобирать тар в WSL.
+
+### сессия 1.9.0 (завершена)
 Состояние: **релиз v1.7.2 выпущен** (404Brain-win32-x64-1.7.2.zip, tag v1.7.2; REH-сервер обновлён в release `1.99.3`).
 
 Итоги сессии (план внизу — исполнен полностью):
@@ -174,6 +201,38 @@ REH-тара в release 1.99.3 сделали через системный tar 
 Рецепт правильного тара под Windows: `wsl -e bash -lc "cp -r <folder> ~/ && chmod +x bin/* bin/remote-cli/* bin/helpers/*.sh; tar -czf ..."` —
 на ext4 биты сохраняются. Проверка: `tar -tvf | grep 404brain-server` должен показать `-rwxr-xr-x`.
 Фикс уже залит clobber в release 1.99.3 (58.0 МБ, commit `3efe08f1`); на `.144` переразвернуто вручную и проверено (`--help` → «404Brain 1.99.3»).
+
+### Постфикс сессии 1.9.0 — фикс REH-тара (нативные аддоны Windows в Linux-таре → зависал терминал)
+Симптом: терминал на remote (`.144`) висел при открытии; в логе сервера:
+`@parcel/watcher/build/Release/watcher.node: invalid ELF header` (это Windows PE32, а не Linux ELF).
+
+Кейс (ВАЖНО): `npm run gulp vscode-reh-linux-x64` на **Windows** кладёт в REH `node_modules/**`
+нативные `.node` аддоны, скомпилированные под Windows (PE32+): `@parcel/watcher`, `node-pty`,
+`@vscode/spdlog`, `native-watchdog`, `kerberos`, `@vscode/deviceid`, `vsda` и Windows-only
+(`crypt32`, `windows_process_tree`, `winregistry`, `conpty*`, `msal-node-runtime`). Для Linux-REH
+они бесполезны и роняют ptyHost (терминал), файл-watcher и т.д.
+
+Рецепт фикса (пересобрать нативный слой из официального VS Code той же версии):
+1. Скачать официальный сервер той же версии (1.99.3):
+   `curl "https://update.code.visualstudio.com/commit:<MS_COMMIT>/server-linux-x64/stable" -o vs-server.tar.gz`
+   (commit берём из `https://api.github.com/repos/microsoft/vscode/git/refs/tags/<version>`).
+2. Распаковать оба тара внутри WSL (на ext4, чтобы сохранить exec-биты):
+   `tar xzf our.tar.gz` + `mkdir of && tar xzf vs-server.tar.gz -C of`.
+3. Скопировать Linux ELF `.node` из официального в наш REH (пути совпадают):
+   `@parcel/watcher/build/Release/watcher.node`, `node-pty/build/Release/pty.node`,
+   `@vscode/spdlog/build/Release/spdlog.node`, `native-watchdog/build/Release/watchdog.node`,
+   `kerberos/build/Release/kerberos.node`, `@vscode/deviceid/build/Release/windows.node`,
+   `vsda/build/Release/vsda.node` (vsda может отсутствовать — создать папку и положить).
+4. Удалить Windows-only аддоны (их в Linux-таре быть не должно):
+   `node-pty/build/Release/{conpty,conpty_console_list}.node`,
+   `@vscode/windows-ca-certs/.../crypt32.node`, `@vscode/windows-process-tree/.../windows_process_tree.node`,
+   `@vscode/windows-registry/.../winregistry.node`, `extensions/microsoft-authentication/dist/msal-node-runtime.node`.
+5. Проверка: `find ... -name '*.node' -exec file {} +` → все `ELF 64-bit` (7 шт. остаётся).
+6. Пересобрать тар в WSL: `tar -czf brain-reh-linux-x64-1.99.3.tar.gz vscode-reh-linux-x64`.
+7. `gh release upload 1.99.3 <tar> --clobber`, дальше переустановить сервер на `.144` из нового тара.
+   Проверка терминала напрямую: `./node ptest.cjs` с `require('node-pty')` + `pty.spawn('bash', ...)` →
+   должен вывести `TERMINAL_OK`. Примечание: при `process.exit` без закрытия подписки watcher возможен
+   `free(): double free` — это артефакт теста, в проде сервер закрывает подписки корректно.
 
 ### сессия 1.8.0 (завершена)
 Состояние: **релиз v1.7.1 выпущен** (404Brain-win32-x64-1.7.1.zip, tag v1.7.1; REH-сервер обновлён в release `1.99.3`).

@@ -16,10 +16,26 @@ import { ITerminalToolService } from './terminalToolService.js';
 import { IBrainModelService } from '../common/brainModelService.js';
 import { URI } from '../../../../base/common/uri.js';
 import { EndOfLinePreference } from '../../../../editor/common/model.js';
+import { IMarkerService, MarkerSeverity } from '../../../../platform/markers/common/markers.js';
 import { ToolName } from '../common/toolsServiceTypes.js';
 import { IMCPService } from '../common/mcpService.js';
 
 export const EMPTY_MESSAGE = '(empty message)'
+
+// Detect the human language of a message by its alphabet (code paths/identifiers are unaffected).
+const detectHumanLanguage = (text: string): string | null => {
+	if (!text) return null
+	// Cyrillic -> Russian (also used by Ukrainian/Bulgarian/etc., a good-enough default for chat)
+	if (/[\u0400-\u04FF]/.test(text)) return 'Russian'
+	if (/[\u4E00-\u9FFF]/.test(text)) return 'Chinese'
+	if (/[\u3040-\u30FF]/.test(text)) return 'Japanese'
+	if (/[\uAC00-\uD7AF]/.test(text)) return 'Korean'
+	if (/[\u0600-\u06FF]/.test(text)) return 'Arabic'
+	if (/[\u0590-\u05FF]/.test(text)) return 'Hebrew'
+	if (/[\u0E00-\u0E7F]/.test(text)) return 'Thai'
+	if (/[\u0370-\u03FF]/.test(text)) return 'Greek'
+	return null
+}
 
 
 
@@ -605,6 +621,7 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		@IBrainSettingsService private readonly brainSettingsService: IBrainSettingsService,
 		@IBrainModelService private readonly brainModelService: IBrainModelService,
 		@IMCPService private readonly mcpService: IMCPService,
+		@IMarkerService private readonly markerService: IMarkerService,
 	) {
 		super()
 	}
@@ -651,6 +668,30 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		}
 	}
 
+	// Aide-style proactive context: lint errors of the active file are injected straight into the
+	// system message so the model does not waste a whole tool round-trip on read_lint_errors.
+	private _getActiveFileDiagnosticsStr(activeFsPath: string | undefined, maxMarkers = 30): string {
+		try {
+			if (!activeFsPath) return ''
+			const markers = this.markerService.read({ resource: URI.file(activeFsPath) })
+				.filter(m => m.severity === MarkerSeverity.Error || m.severity === MarkerSeverity.Warning)
+				.slice(0, maxMarkers)
+			if (markers.length === 0) return ''
+
+			const lines: string[] = []
+			for (const m of markers) {
+				const code = m.code ? ` (${typeof m.code === 'string' ? m.code : m.code.value})` : ''
+				const sev = m.severity === MarkerSeverity.Error ? 'error' : 'warning'
+				const msg = m.message.replace(/\n/g, ' ').trim()
+				lines.push(`- line ${m.startLineNumber}: [${sev}]${code} ${msg}`)
+			}
+			return `<current_lint_errors>\n@file: ${activeFsPath}\n${lines.join('\n')}\n</current_lint_errors>`
+		}
+		catch (e) {
+			return ''
+		}
+	}
+
 	// Get combined AI instructions from settings and .brainrules files
 	private _getCombinedAIInstructions(): string {
 		const globalAIInstructions = this.brainSettingsService.state.globalSettings.aiInstructions;
@@ -684,9 +725,10 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 
 		const persistentTerminalIDs = this.terminalToolService.listPersistentTerminalIds()
 		const systemMessage = chat_systemMessage({ workspaceFolders, openedURIs, directoryStr, activeURI, persistentTerminalIDs, chatMode, mcpTools, includeXMLToolDefinitions })
-		return systemMessage
-	}
 
+		const activeFileDiag = (chatMode === 'agent' || chatMode === 'gather') ? this._getActiveFileDiagnosticsStr(activeURI) : ''
+		return activeFileDiag ? `${systemMessage}\n\n${activeFileDiag}` : systemMessage
+	}
 
 
 
@@ -782,9 +824,21 @@ class ConvertToLLMMessageService extends Disposable implements IConvertToLLMMess
 		const reservedOutputTokenSpace = getReservedOutputTokenSpace(providerName, modelName, { isReasoningEnabled, overridesOfModel })
 		const llmMessages = this._chatMessagesToSimpleMessages(chatMessages)
 
+		// Detect the user's language by alphabet and nail it down so the model never slips to another language (e.g. replying in Spanish to a Russian greeting).
+		let userLanguage: string | null = null
+		for (let i = chatMessages.length - 1; i >= 0; i--) {
+			const m = chatMessages[i]
+			if (m.role !== 'user') continue
+			const detected = detectHumanLanguage(m.displayContent || m.content)
+			if (detected) { userLanguage = detected; break }
+		}
+		const languagePinnedSystemMessage = systemMessage || userLanguage
+			? `${systemMessage || ''}\n\n<language_override>\n- The user's latest message was written in ${userLanguage ?? 'the user\'s language'}. You MUST write your final answer in that same language. Never switch to English, Spanish, or any other language just because the system prompt is in English.\n- Code, identifiers, and technical terms stay as-is; only the prose must be in the user's language.\n</language_override>`.trim()
+			: ''
+
 		const { messages, separateSystemMessage } = prepareMessages({
 			messages: llmMessages,
-			systemMessage,
+			systemMessage: languagePinnedSystemMessage,
 			aiInstructions,
 			supportsSystemMessage,
 			specialToolFormat,

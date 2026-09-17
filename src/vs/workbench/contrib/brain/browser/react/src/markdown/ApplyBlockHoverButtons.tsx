@@ -342,7 +342,7 @@ const ApplyButtonsForEdit = ({
 
 		await editCodeService.callBeforeApplyOrEdit(uri)
 
-		const [newApplyingUri, applyDonePromise] = editCodeService.startApplying({
+		let [newApplyingUri, applyDonePromise] = editCodeService.startApplying({
 			from: 'ClickApply',
 			applyStr: codeStr,
 			uri: uri,
@@ -350,7 +350,27 @@ const ApplyButtonsForEdit = ({
 		}) ?? []
 		setApplying(newApplyingUri)
 
-		if (!applyDonePromise) {
+		// no file open and block wants 'current' file → create a new one instead of failing
+		if (!applyDonePromise && uri === 'current' && codeStr) {
+			const editorService = accessor.get('IEditorService')
+			const result = await editorService.openEditor({ untitled: true, languageId })
+			const newUri = result?.input?.resource
+			if (newUri) {
+				const [appliedUri, appliedDonePromise] = editCodeService.startApplying({
+					from: 'ClickApply',
+					applyStr: codeStr,
+					uri: newUri,
+					startBehavior: 'reject-conflicts',
+				}) ?? []
+				if (appliedDonePromise) {
+					setApplying(appliedUri)
+					newApplyingUri = appliedUri
+					applyDonePromise = appliedDonePromise
+				}
+			}
+		}
+
+		if (!applyDonePromise && !newApplyingUri) {
 			notificationService.info(`404Brain Error: We couldn't run Apply here. ${uri === 'current' ? 'This Apply block wants to run on the current file, but you might not have a file open.' : `This Apply block wants to run on ${uri.fsPath}, but it might not exist.`}`)
 		}
 
@@ -363,7 +383,7 @@ const ApplyButtonsForEdit = ({
 		})
 		metricsService.capture('Apply Code', { length: codeStr.length }) // capture the length only
 
-	}, [setApplying, currStreamStateRef, editCodeService, codeStr, uri, applyBoxId, metricsService, notificationService])
+	}, [setApplying, currStreamStateRef, editCodeService, codeStr, uri, applyBoxId, metricsService, notificationService, language])
 
 
 	const onClickStop = useCallback(() => {
