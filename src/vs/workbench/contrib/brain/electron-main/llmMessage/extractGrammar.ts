@@ -3,7 +3,6 @@
  *  Licensed under the Apache License, Version 2.0. See LICENSE.txt for more information.
  *--------------------------------------------------------------------------------------*/
 
-import { generateUuid } from '../../../../../base/common/uuid.js'
 import { endsWithAnyPrefixOf, SurroundingsRemover } from '../../common/helpers/extractCodeFromResult.js'
 import { availableTools, InternalToolInfo } from '../../common/prompt/prompts.js'
 import { OnFinalMessage, OnText, RawToolCallObj, RawToolParamsObj } from '../../common/sendLLMMessageTypes.js'
@@ -287,87 +286,145 @@ export const extractXMLToolsWrapper = (
 		return out
 	}
 
-	const toolId = generateUuid()
-
-	// detect <availableTools[0]></availableTools[0]>, etc
+	// detect <availableTools[0]></availableTools[0]>, etc.
+	// Multiple tool calls are supported: the model may batch several consecutive calls in ONE response
+	// (<read_file>...</read_file><read_file>...</read_file>...). They all get parsed here and returned as `toolCalls`.
 	let fullText = '';
 	let trueFullText = ''
-	let latestToolCall: RawToolCallObj | undefined = undefined
+	let latestToolCall: RawToolCallObj | undefined = undefined // the currently-streaming (or most recent) tool call, for live UI
+	let completedToolCalls: RawToolCallObj[] = [] // every fully-closed tool call seen so far
 
-	let foundOpenTag: { idx: number, toolName: ToolName } | null = null
+	let foundOpenTag: { idx: number, toolName: ToolName, id: string } | null = null
 	let openToolTagBuffer = '' // the characters we've seen so far that come after a < with no space afterwards, not yet added to fullText
 
 	let prevFullTextLen = 0
+
+	// feed raw text into the visible buffer. Halfway-written <tags> are withheld until they resolve.
+	// Each tool call gets a unique id derived from its position (stable across chunks AND across rescans).
+	const consumeVisibleChunk = (chunk: string): { open: { idx: number, toolName: ToolName, id: string } | null } => {
+		const combined = openToolTagBuffer + chunk
+		const isPartial = findPartiallyWrittenToolTagAtEnd(combined, toolOpenTags)
+		if (isPartial) {
+			openToolTagBuffer = combined
+			return { open: null }
+		}
+		// not a partial tag, so commit the whole chunk as visible text, then check for a tool tag
+		fullText += combined
+		openToolTagBuffer = ''
+		const i = findIndexOfAny(fullText, toolOpenTags)
+		if (i !== null) {
+			const [idx, toolTag] = i
+			const toolName = toolTag.substring(1, toolTag.length - 1) as ToolName
+			// do not count anything at or after i in fullText
+			fullText = fullText.substring(0, idx)
+			return { open: { idx, toolName, id: `call_${toolName}_${idx}` } }
+		}
+		return { open: null }
+	}
+
 	const newOnText: OnText = (params) => {
 		const sanitizedFullText = sanitizeToolStream(params.fullText)
 		const newText = sanitizedFullText.substring(prevFullTextLen)
 		prevFullTextLen = sanitizedFullText.length
 		trueFullText = sanitizedFullText
 
-		// console.log('NEWTEXT', JSON.stringify(newText))
-
-
+		// if we're not inside a tool call, absorb the new text and look for an opening tag
 		if (foundOpenTag === null) {
-			const newFullText = openToolTagBuffer + newText
-			// ensure the code below doesn't run if only half a tag has been written
-			const isPartial = findPartiallyWrittenToolTagAtEnd(newFullText, toolOpenTags)
-			if (isPartial) {
-				// console.log('--- partial!!!')
-				openToolTagBuffer += newText
-			}
-			// if no tooltag is partially written at the end, attempt to get the index
-			else {
-				// we will instantly retroactively remove this if it's a tag match
-				fullText += openToolTagBuffer
-				openToolTagBuffer = ''
-				fullText += newText
-
-				const i = findIndexOfAny(fullText, toolOpenTags)
-				if (i !== null) {
-					const [idx, toolTag] = i
-					const toolName = toolTag.substring(1, toolTag.length - 1) as ToolName
-					// console.log('found ', toolName)
-					foundOpenTag = { idx, toolName }
-
-					// do not count anything at or after i in fullText
-					fullText = fullText.substring(0, idx)
-				}
-
-
-			}
+			const { open } = consumeVisibleChunk(newText)
+			if (open) foundOpenTag = open
 		}
 
-		// toolTagIdx is not null, so parse the XML
-		if (foundOpenTag !== null) {
-			latestToolCall = parseXMLPrefixToToolCall(
-				foundOpenTag.toolName,
-				toolId,
-				trueFullText.substring(foundOpenTag.idx, Infinity),
-				toolOfToolName,
-			)
+		// process (possibly several) complete tool calls the model batched consecutively
+		let guard = 0
+		while (foundOpenTag) {
+			if (guard++ > 50) break // safety net
+
+			// parse ONLY up to this call's own closing tag, so consecutive same-name calls don't pollute each other
+			const closeTag = `</${foundOpenTag.toolName}>`
+			const block = trueFullText.substring(foundOpenTag.idx)
+			const closeIdx = block.indexOf(closeTag)
+			const blockText = closeIdx === -1 ? block : block.substring(0, closeIdx + closeTag.length)
+			const call = parseXMLPrefixToToolCall(foundOpenTag.toolName, foundOpenTag.id, blockText, toolOfToolName)
+			latestToolCall = call
+			if (!call.isDone) break // still streaming this call
+
+			// this call is fully closed - park it and re-scan what follows it
+			completedToolCalls.push(call)
+			const closeEndIdx = foundOpenTag.idx + (closeIdx === -1 ? block.length : closeIdx + closeTag.length)
+			foundOpenTag = null
+
+			const { open } = consumeVisibleChunk(trueFullText.substring(closeEndIdx))
+			if (open) foundOpenTag = open
+			else latestToolCall = undefined
 		}
 
 		onText({
 			...params,
 			fullText,
 			toolCall: latestToolCall,
+			toolCalls: completedToolCalls.length ? [...completedToolCalls] : undefined,
 		});
 	};
+
+
+	// deterministic re-scan of the final stream: recomputes every complete call and the (possible) trailing open call,
+	// regardless of how the incremental parser buffered partial tags along the way.
+	const rescanAllToolCalls = () => {
+		fullText = ''
+		completedToolCalls = []
+		latestToolCall = undefined
+		let inProgress = false
+		const s = trueFullText
+		const n = s.length
+		let pos = 0
+		while (pos < n) {
+			// find the next opening tag after pos
+			let bestIdx = -1
+			let bestName = ''
+			for (const name of toolNames) {
+				const tag = `<${name}>`
+				const idx = s.indexOf(tag, pos)
+				if (idx !== -1 && (bestIdx === -1 || idx < bestIdx)) { bestIdx = idx; bestName = name }
+			}
+			if (bestIdx === -1) {
+				fullText += s.substring(pos)
+				break
+			}
+			// visible text before the tool call
+			fullText += s.substring(pos, bestIdx)
+			const name = bestName as ToolName
+			const id = `call_${name}_${bestIdx}`
+			const closeIdx = s.indexOf(`</${name}>`, bestIdx + name.length + 2)
+			if (closeIdx === -1) {
+				// unfinished call at the very end - keep it (matches prior behavior)
+				inProgress = true
+				latestToolCall = parseXMLPrefixToToolCall(name, id, s.substring(bestIdx), toolOfToolName)
+				break
+			}
+			const closeEndIdx = closeIdx + name.length + 3
+			completedToolCalls.push(parseXMLPrefixToToolCall(name, id, s.substring(bestIdx, closeEndIdx), toolOfToolName))
+			pos = closeEndIdx
+		}
+		// withhold a half-written tool tag at the very end of the visible text
+		const partial = findPartiallyWrittenToolTagAtEnd(fullText, toolOpenTags)
+		if (partial) fullText = fullText.substring(0, fullText.length - partial[0].length)
+		if (!inProgress) latestToolCall = undefined
+	}
 
 
 	const newOnFinalMessage: OnFinalMessage = (params) => {
 		// treat like just got text before calling onFinalMessage (or else we sometimes miss the final chunk that's new to finalMessage)
 		newOnText({ ...params })
 
+		// exact pass over the whole stream; this is what we return to the agent loop
+		rescanAllToolCalls()
+
 		fullText = fullText.trimEnd()
-		const toolCall = latestToolCall
+		const additional = latestToolCall ? [latestToolCall] : []
+		const toolCalls = (completedToolCalls.length || additional.length) ? [...completedToolCalls, ...additional] : undefined
+		const toolCall = toolCalls?.[toolCalls.length - 1]
 
-		// console.log('final message!!!', trueFullText)
-		// console.log('----- returning ----\n', fullText)
-		// console.log('----- tools ----\n', JSON.stringify(firstToolCallRef.current, null, 2))
-		// console.log('----- toolCall ----\n', JSON.stringify(toolCall, null, 2))
-
-		onFinalMessage({ ...params, fullText, toolCall: toolCall })
+		onFinalMessage({ ...params, fullText, toolCall, toolCalls })
 	}
 	return { newOnText, newOnFinalMessage };
 }

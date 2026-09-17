@@ -447,7 +447,7 @@ const systemToolsXMLPrompt = (chatMode: ChatMode, mcpTools: InternalToolInfo[] |
     - To call a tool, write its name and parameters in one of the XML formats specified above.
     - After you write the tool call, you must STOP and WAIT for the result.
     - All parameters are REQUIRED unless noted otherwise.
-    - You are only allowed to output ONE tool call, and it must be at the END of your response.
+    - You may output MULTIPLE independent tool calls in one response: write them all consecutively at the END of your response with NO text between them. They all execute in PARALLEL and all their results come back to you at once. Do not write anything after the last closing tag.
     - Your tool call will be executed immediately, and the results will appear in the following user message.`)
 
 	return `\
@@ -506,7 +506,7 @@ ${directoryStr}
 	if (mode === 'agent' || mode === 'gather') {
 		details.push(`Only call tools if they help you accomplish the user's goal. If the user simply says hi or asks you a question that you can answer without tools, then do NOT use tools.`)
 		details.push(`If you think you should use tools, you do not need to ask for permission.`)
-		details.push('Only use ONE tool call at a time.')
+		details.push(`You may make MULTIPLE tool calls in a single response: write them consecutively with NO text between them; they run in parallel and all their results come back together.`)
 		details.push(`NEVER say something like "I'm going to use \`tool_name\`". Instead, describe at a high level what the tool will do, like "I'm going to list all files in the ___ directory", etc.`)
 		details.push(`Many tools only work if the user has a workspace open.`)
 	}
@@ -606,12 +606,12 @@ ${details.map((d, i) => `${i + 1}. ${d}`).join('\n\n')}`)
 - Use only the provided tools and follow their schemas exactly.
 - Never refer to tool names when speaking to the user; describe the action naturally instead (\`I'll list the files in the directory\` not \`I'll use ls_dir\`).
 - If the information you need is discoverable via tools, prefer gathering it over asking the user.
-- You are only allowed to output ONE tool call at a time, and it must be at the END of your response. Wait for the result before the next call.
+- You may REQUEST MULTIPLE tool calls in a single response when they are independent (e.g. reading several files, or searching while listing a directory): write them ALL consecutively at the END of your response, with NO text between them. They execute in PARALLEL and all results come back to you at once. If one call depends on another's result, sequence it in a later response and wait.
 - EXACT tool call format — write it literally, nothing else around it:
     <read_file>
     <uri>C:\\path\\to\\file.py</uri>
     </read_file>
-  The opening tag is the literal \`<\` plus the tool name plus \`>\`. NEVER wrap a call in \`<tool_call>\`/\`</tool_call>\`, \`<invoke>\`, or any other tag. NEVER write the tool name with a stray \`>\` after it (\`read_file>\` is wrong, \`<read_file>\` is right). After the closing tag \`</name>\` nothing else may follow.
+  The opening tag is the literal \`<\` plus the tool name plus \`>\`. NEVER wrap a call in \`<tool_call>\`/\`</tool_call>\`, \`<invoke>\`, or any other tag. NEVER write the tool name with a stray \`>\` after it (\`read_file>\` is wrong, \`<read_file>\` is right). Multiple calls go one after another with NO text between them, and AFTER the last closing tag \`</name>\` nothing else may follow.
 - Inside the tag use ONLY the parameter names listed for that tool in this message (for read_file: \`<uri>\`, \`<start_line>\`, \`<end_line>\`, \`<page_number>\`). Do not invent parameter names.
 - If the next action depends on a previous result, sequence the calls; otherwise keep working without idle pauses.
 - Read files IN FULL before wide-ranging changes and before editing files you have not fully inspected. Do not rely on search snippets for broad changes - open the actual file.
