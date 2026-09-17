@@ -274,6 +274,18 @@ export const extractXMLToolsWrapper = (
 	const toolOfToolName: ToolOfToolName = {}
 	const toolOpenTags = tools.map(t => `<${t.name}>`)
 	for (const t of tools) { toolOfToolName[t.name] = t }
+	const toolNames = tools.map(t => t.name)
+
+	// normalize sloppy model output so tool calls are recognized:
+	// 1) strip wrapper tags some models put around a call (<tool_call>, <invoke>, ...)
+	// 2) fix a missing '<' on the opening tag: `read_file>` -> `<read_file>` (only for known tool names)
+	const sanitizeToolStream = (s: string): string => {
+		let out = s.replace(/<\/?(?:tool_call|tool_use|function_call|invoke|result)\b[^>]*>/gi, '')
+		for (const name of toolNames) {
+			out = out.replace(new RegExp(`(^|\\n)${name}>`, 'g'), `$1<${name}>`)
+		}
+		return out
+	}
 
 	const toolId = generateUuid()
 
@@ -287,9 +299,10 @@ export const extractXMLToolsWrapper = (
 
 	let prevFullTextLen = 0
 	const newOnText: OnText = (params) => {
-		const newText = params.fullText.substring(prevFullTextLen)
-		prevFullTextLen = params.fullText.length
-		trueFullText = params.fullText
+		const sanitizedFullText = sanitizeToolStream(params.fullText)
+		const newText = sanitizedFullText.substring(prevFullTextLen)
+		prevFullTextLen = sanitizedFullText.length
+		trueFullText = sanitizedFullText
 
 		// console.log('NEWTEXT', JSON.stringify(newText))
 

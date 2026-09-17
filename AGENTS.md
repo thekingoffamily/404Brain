@@ -144,7 +144,28 @@ browser/react/src/
 
 ## История работ
 
-### [current] — сессия 2.0.0 (завершена)
+### [current] — сессия 2.1.0 (завершена)
+Состояние: **релиз v1.7.4 выпущен** (404Brain-win32-x64-1.7.4.zip, tag v1.7.4, product 1.7.4/0053, commit `64092b2c`).
+
+Сделано в этой сессии:
+1. **Починены тулзы в чате (агент «умирал» и не читал файлы)**. Симптом: агент писал тул-вызовы как
+   `<tool_call>read_file> <uri>…</uri></read_file>` (обёртка `<tool_call>` + открывающий тег БЕЗ `<`, `read_file>`
+   вместо `<read_file>`) — парсер `extractGrammar.ts` искал строго `<read_file>`, не находил, тул никогда не исполнялся.
+   - **Парсер (толерантность)** `extractGrammar.ts` `extractXMLToolsWrapper`: добавлена `sanitizeToolStream()` —
+     выкидывает обёртки `<tool_call>`/`<tool_use>`/`<function_call>`/`<invoke>`/`<result>` и конвертирует `read_file>`
+     → `<read_file>` ТОЛЬКО для известных имён тулов на старте строки (ложных срабатываний нет — проверено на строке из чата).
+   - **Промпт** `prompts.ts` `<tool_calling>`: жёсткая EXACT-спека формата с примером (`<read_file>` … `</read_file>`),
+     запрет `<tool_call>`-обёртки и лишнего `>` после имени, только перечисленные имена параметров.
+2. **compile** ✅ (0 ошибок), desktop-сборка ✅ (14 мин), проверено в бандле: `sanitizeToolStream` (main.js),
+   «EXACT tool call format» (workbench.desktop.main.js), product 1.7.4/0053.
+
+### Постфикс сессии 2.1.0 — REH-тар перепатчен на `64092b2c`
+- Новый desktop собран из HEAD `64092b2c` (строки BKB до коммита) — в exe запечён `64092b2c`, а релиз-тар `1.99.3`
+  был на `8dcfd2bc` → для Remote-SSH клиент↔сервер разъедутся. Патч без пересборки REH: в
+  `~/.404brain-server/bin/<commit>/product.json` и в `brain-reh-linux-x64-1.99.3.tar.gz` (WSL, ext4) строка `commit`
+  заменена на `64092b2c…`; тар залит clobber в release `1.99.3`.
+
+### сессия 2.0.0 (завершена)
 Состояние: **релиз v1.7.3 выпущен** (404Brain-win32-x64-1.7.3.zip, tag v1.7.3, product 1.7.3/0052).
 
 Сделано в этой сессии (сборка из HEAD `8dcfd2bc`, без нового REH — клиент↔сервер commit совпадают):

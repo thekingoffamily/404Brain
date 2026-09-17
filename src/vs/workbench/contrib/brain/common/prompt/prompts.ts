@@ -607,6 +607,12 @@ ${details.map((d, i) => `${i + 1}. ${d}`).join('\n\n')}`)
 - Never refer to tool names when speaking to the user; describe the action naturally instead (\`I'll list the files in the directory\` not \`I'll use ls_dir\`).
 - If the information you need is discoverable via tools, prefer gathering it over asking the user.
 - You are only allowed to output ONE tool call at a time, and it must be at the END of your response. Wait for the result before the next call.
+- EXACT tool call format — write it literally, nothing else around it:
+    <read_file>
+    <uri>C:\\path\\to\\file.py</uri>
+    </read_file>
+  The opening tag is the literal \`<\` plus the tool name plus \`>\`. NEVER wrap a call in \`<tool_call>\`/\`</tool_call>\`, \`<invoke>\`, or any other tag. NEVER write the tool name with a stray \`>\` after it (\`read_file>\` is wrong, \`<read_file>\` is right). After the closing tag \`</name>\` nothing else may follow.
+- Inside the tag use ONLY the parameter names listed for that tool in this message (for read_file: \`<uri>\`, \`<start_line>\`, \`<end_line>\`, \`<page_number>\`). Do not invent parameter names.
 - If the next action depends on a previous result, sequence the calls; otherwise keep working without idle pauses.
 - Read files IN FULL before wide-ranging changes and before editing files you have not fully inspected. Do not rely on search snippets for broad changes - open the actual file.
 - After making an edit, verify it: re-read the changed region, the imports/usage sites it depends on, and check for errors before declaring the task done.
